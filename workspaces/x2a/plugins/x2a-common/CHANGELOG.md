@@ -1,5 +1,11 @@
 # @red-hat-developer-hub/backstage-plugin-x2a-common
 
+## 1.2.2
+
+### Patch Changes
+
+- daaea27: Changed the project to be source-technology agnostic. Rephrasing all texts from being Chef-oriented to more generic variants. There is explicit mapping from free-form agentic findings to the new SourceTechnology enum (normalizeSourceTechnology.ts).
+
 ## 1.2.1
 
 ### Patch Changes

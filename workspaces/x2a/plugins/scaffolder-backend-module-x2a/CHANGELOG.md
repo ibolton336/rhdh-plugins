@@ -1,5 +1,13 @@
 # @red-hat-developer-hub/backstage-plugin-scaffolder-backend-module-x2a
 
+## 0.3.2
+
+### Patch Changes
+
+- daaea27: Changed the project to be source-technology agnostic. Rephrasing all texts from being Chef-oriented to more generic variants. There is explicit mapping from free-form agentic findings to the new SourceTechnology enum (normalizeSourceTechnology.ts).
+- Updated dependencies [daaea27]
+  - @red-hat-developer-hub/backstage-plugin-x2a-common@1.2.2
+
 ## 0.3.1
 
 ### Patch Changes
