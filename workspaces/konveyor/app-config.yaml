@@ -1,12 +1,34 @@
 app:
-  title: Konveyor Dev
+  title: Konveyor Migration Intelligence
   baseUrl: http://localhost:3000
-
-backend:
-  baseUrl: http://localhost:7007
-  auth:
-    keys:
-      - secret: dev
 
 organization:
   name: Konveyor
+
+backend:
+  baseUrl: http://localhost:7007
+  listen:
+    port: 7007
+  auth:
+    keys:
+      - secret: development
+  csp:
+    connect-src: ["'self'", 'http:', 'https:']
+  cors:
+    origin: http://localhost:3000
+    methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+    credentials: true
+  database:
+    client: better-sqlite3
+    connection: ':memory:'
+
+auth:
+  environment: development
+  providers:
+    guest:
+      dangerouslyAllowOutsideDevelopment: true
+
+catalog:
+  rules:
+    - allow: [Component, Resource, API, System, Domain, Group, User, Location]
+  locations: []

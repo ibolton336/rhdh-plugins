@@ -7,6 +7,8 @@
   },
   "scripts": {
     "start": "backstage-cli repo start",
+    "dev": "concurrently \"yarn start-backend\" \"yarn start\"",
+    "start-backend": "yarn workspace backend start",
     "tsc": "tsc",
     "tsc:full": "tsc --skipLibCheck true --incremental false",
     "build:all": "backstage-cli repo build --all",
@@ -42,6 +44,7 @@
     "@changesets/cli": "^2.27.1",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
     "@spotify/prettier-config": "^15.0.0",
+    "concurrently": "^8.0.0",
     "node-gyp": "^9.0.0",
     "prettier": "3.8.3",
     "typescript": "~5.8.0"
