@@ -6,6 +6,7 @@ import {
   StatusOK,
   StatusWarning,
   InfoCard,
+  Progress,
 } from '@backstage/core-components';
 import {
   Chip,
@@ -16,8 +17,10 @@ import {
   Step,
   StepLabel,
 } from '@material-ui/core';
+import { Alert } from '@material-ui/lab';
 
-import { mockPipelineDefinitions, PipelineDefinition } from './mockData';
+import { PipelineDefinition } from './mockData';
+import { usePipelineDefinitions } from '../../hooks/useApi';
 
 function PipelineCard({ pipeline }: { pipeline: PipelineDefinition }) {
   return (
@@ -55,6 +58,10 @@ function PipelineCard({ pipeline }: { pipeline: PipelineDefinition }) {
 }
 
 export const PipelineDefinitionsPage = () => {
+  const { pipelines, loading, error } = usePipelineDefinitions();
+
+  if (loading) return <Progress />;
+
   return (
     <Page themeId="tool">
       <Header
@@ -63,8 +70,13 @@ export const PipelineDefinitionsPage = () => {
       />
       <Content>
         <ContentHeader title="Pipelines" />
+        {error && (
+          <Alert severity="warning" style={{ marginBottom: 16 }}>
+            Using mock data — backend unavailable
+          </Alert>
+        )}
         <Grid container spacing={3}>
-          {mockPipelineDefinitions.map(pipeline => (
+          {pipelines.map(pipeline => (
             <Grid item xs={12} key={pipeline.id}>
               <PipelineCard pipeline={pipeline} />
             </Grid>

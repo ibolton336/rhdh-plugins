@@ -8,6 +8,7 @@ import {
   TableColumn,
   StatusOK,
   StatusWarning,
+  Progress,
 } from '@backstage/core-components';
 import {
   Chip,
@@ -26,13 +27,14 @@ import {
   Input,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
+import { Alert } from '@material-ui/lab';
 
 import {
-  mockAgentDefinitions,
   AgentDefinition,
   availableLLMProviders,
   availableRules,
 } from './mockData';
+import { useAgentDefinitions } from '../../hooks/useApi';
 
 function CreateAgentDialog({
   open,
@@ -135,6 +137,7 @@ function CreateAgentDialog({
 
 export const AgentDefinitionsPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { agents, loading, error } = useAgentDefinitions();
 
   const columns: TableColumn<AgentDefinition>[] = [
     {
@@ -213,6 +216,8 @@ export const AgentDefinitionsPage = () => {
     },
   ];
 
+  if (loading) return <Progress />;
+
   return (
     <Page themeId="tool">
       <Header
@@ -230,9 +235,14 @@ export const AgentDefinitionsPage = () => {
             Create Agent Definition
           </Button>
         </ContentHeader>
+        {error && (
+          <Alert severity="warning" style={{ marginBottom: 16 }}>
+            Using mock data — backend unavailable
+          </Alert>
+        )}
         <Table
           columns={columns}
-          data={mockAgentDefinitions}
+          data={agents}
           title=""
           options={{ search: true, paging: false, padding: 'dense' }}
         />

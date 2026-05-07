@@ -1,9 +1,14 @@
 import {
+  createApiFactory,
   createPlugin,
   createRoutableExtension,
+  discoveryApiRef,
+  fetchApiRef,
 } from '@backstage/core-plugin-api';
 
 import { rootRouteRef, agentDefinitionsRouteRef, pipelineDefinitionsRouteRef } from './routes';
+import { migrationIntelligenceApiRef } from './api';
+import { MigrationIntelligenceClient } from './api/MigrationIntelligenceClient';
 
 const pluginId = 'migration-intelligence';
 
@@ -14,6 +19,14 @@ export const migrationIntelligencePlugin = createPlugin({
     agentDefinitions: agentDefinitionsRouteRef,
     pipelineDefinitions: pipelineDefinitionsRouteRef,
   },
+  apis: [
+    createApiFactory({
+      api: migrationIntelligenceApiRef,
+      deps: { discoveryApi: discoveryApiRef, fetchApi: fetchApiRef },
+      factory: ({ discoveryApi, fetchApi }) =>
+        new MigrationIntelligenceClient({ discoveryApi, fetchApi }),
+    }),
+  ],
 });
 
 export const MigrationIntelligencePage = migrationIntelligencePlugin.provide(
