@@ -315,7 +315,6 @@ export const MigrationDashboardPage = () => {
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}
           applications={mockApplications.filter(a => a.status === 'pending')}
-          migrators={mockMigrators.filter(m => m.status === 'available')}
         />
       </Content>
     </Page>

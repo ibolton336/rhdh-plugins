@@ -20,10 +20,11 @@ import {
 import { makeStyles } from '@material-ui/core/styles';
 import { Alert } from '@material-ui/lab';
 
+import { ApplicationMigration } from '../MigrationDashboardPage/mockData';
 import {
-  ApplicationMigration,
-  Migrator,
-} from '../MigrationDashboardPage/mockData';
+  mockPipelineDefinitions,
+} from '../PipelineDefinitionsPage/mockData';
+import { mockAgentDefinitions } from '../AgentDefinitionsPage/mockData';
 
 const useStyles = makeStyles(theme => ({
   formControl: { margin: theme.spacing(2, 0), minWidth: '100%' },
@@ -33,36 +34,53 @@ const useStyles = makeStyles(theme => ({
     backgroundColor: theme.palette.background.default,
   },
   chip: { margin: theme.spacing(0.5) },
+  pipelineStep: {
+    padding: theme.spacing(1),
+    margin: theme.spacing(0.5, 0),
+    borderLeft: `3px solid ${theme.palette.primary.main}`,
+    paddingLeft: theme.spacing(2),
+  },
 }));
 
 interface StartMigrationDialogProps {
   open: boolean;
   onClose: () => void;
   applications: ApplicationMigration[];
-  migrators: Migrator[];
 }
 
-const steps = ['Select Application', 'Choose Migrator', 'Review & Start'];
+const steps = [
+  'Select Application',
+  'Choose Pipeline',
+  'Configure & Review',
+  'Start',
+];
 
 export const StartMigrationDialog = ({
   open,
   onClose,
   applications,
-  migrators,
 }: StartMigrationDialogProps) => {
   const classes = useStyles();
   const [activeStep, setActiveStep] = useState(0);
   const [selectedApp, setSelectedApp] = useState<string>('');
-  const [selectedMigrator, setSelectedMigrator] = useState<string>('');
+  const [selectedPipeline, setSelectedPipeline] = useState<string>('');
   const [submitted, setSubmitted] = useState(false);
 
   const app = applications.find(a => a.id === selectedApp);
-  const migrator = migrators.find(m => m.id === selectedMigrator);
+  const pipeline = mockPipelineDefinitions.find(
+    p => p.id === selectedPipeline,
+  );
+  const activePipelines = mockPipelineDefinitions.filter(
+    p => p.status === 'active',
+  );
+  const activeAgents = mockAgentDefinitions.filter(
+    a => a.status === 'active',
+  );
 
   const handleNext = () => {
     if (activeStep === steps.length - 1) {
       setSubmitted(true);
-      setTimeout(() => handleClose(), 2000);
+      setTimeout(() => handleClose(), 3000);
     } else {
       setActiveStep(prev => prev + 1);
     }
@@ -73,14 +91,14 @@ export const StartMigrationDialog = ({
   const handleClose = () => {
     setActiveStep(0);
     setSelectedApp('');
-    setSelectedMigrator('');
+    setSelectedPipeline('');
     setSubmitted(false);
     onClose();
   };
 
   const canProceed = () => {
     if (activeStep === 0) return !!selectedApp;
-    if (activeStep === 1) return !!selectedMigrator;
+    if (activeStep === 1) return !!selectedPipeline;
     return true;
   };
 
@@ -130,11 +148,6 @@ export const StartMigrationDialog = ({
                     color="primary"
                     className={classes.chip}
                   />
-                  <Chip
-                    label={`Complexity: ${app.complexity}`}
-                    size="small"
-                    className={classes.chip}
-                  />
                 </Box>
               </Paper>
             )}
@@ -145,91 +158,125 @@ export const StartMigrationDialog = ({
         return (
           <Box>
             <Typography variant="body1" gutterBottom>
-              Choose a migrator:
+              Choose a migration pipeline:
             </Typography>
             <FormControl variant="outlined" className={classes.formControl}>
-              <InputLabel>Migrator</InputLabel>
+              <InputLabel>Pipeline</InputLabel>
               <Select
-                value={selectedMigrator}
-                onChange={e => setSelectedMigrator(e.target.value as string)}
-                label="Migrator"
+                value={selectedPipeline}
+                onChange={e => setSelectedPipeline(e.target.value as string)}
+                label="Pipeline"
               >
-                {migrators.map(m => (
-                  <MenuItem key={m.id} value={m.id}>
-                    {m.name} ({m.type}) — {m.avgDuration}
+                {activePipelines.map(p => (
+                  <MenuItem key={p.id} value={p.id}>
+                    {p.name} — {p.steps.length} steps
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
-            {migrator && (
+            {pipeline && (
               <Paper variant="outlined" className={classes.summary}>
-                <Typography variant="subtitle2">{migrator.name}</Typography>
-                <Typography variant="body2" color="textSecondary">
-                  {migrator.description}
+                <Typography variant="subtitle2">{pipeline.name}</Typography>
+                <Typography variant="body2" color="textSecondary" gutterBottom>
+                  {pipeline.description}
                 </Typography>
-                <Box mt={1}>
-                  <Chip
-                    label={`Type: ${migrator.type}`}
-                    size="small"
-                    className={classes.chip}
-                  />
-                  <Chip
-                    label={`Skill: ${migrator.skill}`}
-                    size="small"
-                    className={classes.chip}
-                  />
-                  {migrator.successRate && (
-                    <Chip
-                      label={`${migrator.successRate}% success`}
-                      size="small"
-                      color="primary"
-                      className={classes.chip}
-                    />
-                  )}
-                </Box>
+                <Typography variant="caption" color="textSecondary">
+                  Pipeline steps:
+                </Typography>
+                {pipeline.steps.map(step => (
+                  <Paper
+                    key={step.order}
+                    variant="outlined"
+                    className={classes.pipelineStep}
+                  >
+                    <Typography variant="body2">
+                      <strong>{step.order}.</strong> {step.agentName}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      {step.description}
+                    </Typography>
+                  </Paper>
+                ))}
               </Paper>
             )}
           </Box>
         );
 
       case 2:
+        return (
+          <Box>
+            <Typography variant="body1" gutterBottom>
+              Review configuration:
+            </Typography>
+            <Paper variant="outlined" className={classes.summary}>
+              <Typography variant="subtitle2" gutterBottom>
+                Migration Summary
+              </Typography>
+              <Typography variant="body2">
+                <strong>Application:</strong> {app?.name}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Source:</strong> {app?.sourceTechnology}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Target:</strong> {app?.targetTechnology}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Repository:</strong> {app?.sourceRepository}
+              </Typography>
+              <Box mt={2}>
+                <Typography variant="body2">
+                  <strong>Pipeline:</strong> {pipeline?.name}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Steps:</strong>{' '}
+                  {pipeline?.steps.map(s => s.agentName).join(' → ')}
+                </Typography>
+              </Box>
+              <Box mt={2}>
+                <Typography variant="caption" color="textSecondary">
+                  Agents that will be used:
+                </Typography>
+                <Box mt={0.5}>
+                  {activeAgents.slice(0, 2).map(agent => (
+                    <Chip
+                      key={agent.id}
+                      label={`${agent.name} (${agent.llmProvider})`}
+                      size="small"
+                      className={classes.chip}
+                    />
+                  ))}
+                </Box>
+              </Box>
+              <Box mt={2}>
+                <Alert severity="info">
+                  This will create a Tekton PipelineRun on the cluster. Each
+                  step runs as a container with access to the configured
+                  migration skill. The final step opens a PR with the migrated
+                  code.
+                </Alert>
+              </Box>
+            </Paper>
+          </Box>
+        );
+
+      case 3:
         return submitted ? (
           <Alert severity="success">
-            Migration started! {app?.name} is now being migrated using{' '}
-            {migrator?.name}.
+            PipelineRun created! Migration of <strong>{app?.name}</strong> is
+            now running. Pipeline: {pipeline?.name} (
+            {pipeline?.steps.map(s => s.agentName).join(' → ')}). You'll
+            receive a PR link when complete.
           </Alert>
         ) : (
           <Box>
             <Typography variant="body1" gutterBottom>
-              Confirm migration:
+              Ready to start the migration pipeline?
             </Typography>
-            <Paper variant="outlined" className={classes.summary}>
-              <Typography variant="body2">
-                <strong>App:</strong> {app?.name}
-              </Typography>
-              <Typography variant="body2">
-                <strong>From:</strong> {app?.sourceTechnology}
-              </Typography>
-              <Typography variant="body2">
-                <strong>To:</strong> {app?.targetTechnology}
-              </Typography>
-              <Typography variant="body2">
-                <strong>Migrator:</strong> {migrator?.name} ({migrator?.type})
-              </Typography>
-              <Typography variant="body2">
-                <strong>Skill:</strong> {migrator?.skill}
-              </Typography>
-              <Typography variant="body2">
-                <strong>Est:</strong> {migrator?.avgDuration}
-              </Typography>
-              <Box mt={1}>
-                <Alert severity="info">
-                  This will create a TaskGroup in Konveyor Hub and dispatch the
-                  addon to process the migration. A new branch will be created
-                  with migrated code.
-                </Alert>
-              </Box>
-            </Paper>
+            <Alert severity="warning">
+              This will spin up {pipeline?.steps.length} agent container(s) on
+              the cluster. Each agent will process the source code sequentially.
+            </Alert>
           </Box>
         );
 
@@ -263,7 +310,7 @@ export const StartMigrationDialog = ({
             onClick={handleNext}
             disabled={!canProceed()}
           >
-            {activeStep === steps.length - 1 ? 'Start Migration' : 'Next'}
+            {activeStep === steps.length - 1 ? 'Create PipelineRun' : 'Next'}
           </Button>
         )}
       </DialogActions>
