@@ -1,0 +1,12 @@
+dynamicPlugins:
+  frontend:
+    red-hat-developer-hub.backstage-plugin-migration-intelligence:
+      appIcons:
+        - name: migrationIcon
+          importName: MigrationIcon
+      dynamicRoutes:
+        - path: /migration-intelligence
+          importName: MigrationIntelligencePage
+          menuItem:
+            text: 'Migration Intelligence'
+            icon: migrationIcon

@@ -1,0 +1,25 @@
+app:
+  title: Migration Intelligence POC
+  baseUrl: http://localhost:7007
+backend:
+  auth:
+    keys:
+      - secret: development
+  baseUrl: http://localhost:7007
+  csp:
+    connect-src: ["'self'", 'http:', 'https:']
+    upgrade-insecure-requests: false
+  cors:
+    origin: http://localhost:7007
+    methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+    credentials: true
+  database:
+    client: better-sqlite3
+    connection: ':memory:'
+auth:
+  environment: development
+  providers:
+    guest:
+      dangerouslyAllowOutsideDevelopment: true
+dynamicPlugins:
+  rootDirectory: dynamic-plugins-root

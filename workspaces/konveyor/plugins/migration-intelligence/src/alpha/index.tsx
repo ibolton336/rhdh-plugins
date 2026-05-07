@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   createFrontendPlugin,
   PageBlueprint,
@@ -9,8 +8,8 @@ import {
   convertLegacyRouteRefs,
   compatWrapper,
 } from '@backstage/core-compat-api';
-import { rootRouteRef } from './routes';
-import { MigrationIcon } from './icons';
+import { rootRouteRef } from '../routes';
+import { MigrationIcon } from '../icons';
 
 const migrationIntelligencePage = PageBlueprint.makeWithOverrides({
   factory(originalFactory, _) {
@@ -18,7 +17,7 @@ const migrationIntelligencePage = PageBlueprint.makeWithOverrides({
       path: '/migration-intelligence',
       routeRef: convertLegacyRouteRef(rootRouteRef),
       loader: () =>
-        import('./components/MigrationDashboardPage').then(m =>
+        import('../components/MigrationDashboardPage').then(m =>
           compatWrapper(<m.MigrationDashboardPage />),
         ),
     });
@@ -33,11 +32,14 @@ const migrationIntelligenceNavItem = NavItemBlueprint.make({
   },
 });
 
-export default createFrontendPlugin({
+/** @public */
+const plugin: any = createFrontendPlugin({
   pluginId: 'migration-intelligence',
-  info: { packageJson: () => import('../package.json') },
+  info: { packageJson: () => import('../../package.json') },
   extensions: [migrationIntelligencePage, migrationIntelligenceNavItem],
   routes: convertLegacyRouteRefs({
     root: rootRouteRef,
   }),
 });
+
+export default plugin;

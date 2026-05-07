@@ -1,0 +1,12 @@
+app:
+  title: Konveyor Dev
+  baseUrl: http://localhost:3000
+
+backend:
+  baseUrl: http://localhost:7007
+  auth:
+    keys:
+      - secret: dev
+
+organization:
+  name: Konveyor
