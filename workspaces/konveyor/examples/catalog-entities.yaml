@@ -1,0 +1,113 @@
+---
+# Real catalog entities for migration intelligence
+# Register via RHDH catalog locations
+
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: migration-infrastructure
+  description: Konveyor migration infrastructure — agents, pipelines, and targets
+spec:
+  owner: team-konveyor
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: coolstore
+  description: Classic Java EE e-commerce application — EJBs, JMS, JSF
+  annotations:
+    konveyor.io/migration-status: pending
+    konveyor.io/source-technology: java-ee-7
+    konveyor.io/target-technology: quarkus-3
+    konveyor.io/complexity: high
+    github.com/project-slug: konveyor-ecosystem/coolstore
+  tags:
+    - java
+    - java-ee
+    - migration-candidate
+  links:
+    - url: https://github.com/konveyor-ecosystem/coolstore
+      title: Source Repository
+spec:
+  type: service
+  lifecycle: production
+  owner: team-retail
+  system: retail-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: inventory-service
+  description: Spring Boot inventory microservice — JPA and REST endpoints
+  annotations:
+    konveyor.io/migration-status: pending
+    konveyor.io/source-technology: spring-boot-2
+    konveyor.io/target-technology: quarkus-3
+    konveyor.io/complexity: medium
+    github.com/project-slug: konveyor-ecosystem/inventory-service
+  tags:
+    - java
+    - spring-boot
+    - migration-candidate
+spec:
+  type: service
+  lifecycle: production
+  owner: team-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: order-service
+  description: Java EE order processing — REST with CDI
+  annotations:
+    konveyor.io/migration-status: pending
+    konveyor.io/source-technology: java-ee-8
+    konveyor.io/target-technology: quarkus-3
+    konveyor.io/complexity: low
+    github.com/project-slug: konveyor-ecosystem/order-service
+  tags:
+    - java
+    - java-ee
+    - migration-candidate
+spec:
+  type: service
+  lifecycle: production
+  owner: team-orders
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: quarkus-3-target
+  description: "Migration target: Quarkus 3.8 runtime on Kubernetes"
+  annotations:
+    konveyor.io/target-runtime: quarkus
+    konveyor.io/target-version: "3.8"
+  tags:
+    - migration-target
+    - quarkus
+spec:
+  type: migration-target
+  owner: team-platform
+  system: migration-infrastructure
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: java-ee-to-quarkus-skill
+  description: "Migration skill: Java EE to Quarkus transformation prompts and rules"
+  annotations:
+    konveyor.io/skill-type: migration
+    konveyor.io/supported-sources: java-ee-7,java-ee-8
+    konveyor.io/supported-targets: quarkus-3
+  tags:
+    - migration-skill
+    - konveyor
+spec:
+  type: migration-skill
+  owner: team-konveyor
+  system: migration-infrastructure

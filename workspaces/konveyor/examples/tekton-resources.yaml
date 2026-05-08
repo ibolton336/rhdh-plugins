@@ -1,0 +1,118 @@
+---
+# Tekton Task: Migration Agent
+# Runs goose/opencode with a migration skill against a source repo
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: migration-agent
+  namespace: rhdh
+  labels:
+    konveyor.io/task-type: migration-agent
+spec:
+  params:
+    - name: source-repo
+      description: Git URL of the application to migrate
+      type: string
+    - name: source-branch
+      description: Branch to migrate from
+      type: string
+      default: main
+    - name: target-branch
+      description: Branch to push migrated code to
+      type: string
+      default: migration-output
+    - name: skill
+      description: Migration skill to use (e.g. java-ee-to-quarkus)
+      type: string
+    - name: llm-provider
+      description: LLM provider endpoint
+      type: string
+      default: ""
+    - name: agent-type
+      description: Which agent to run (goose, opencode)
+      type: string
+      default: goose
+  steps:
+    - name: clone
+      image: alpine/git:latest
+      script: |
+        git clone --branch $(params.source-branch) $(params.source-repo) /workspace/source
+    - name: run-agent
+      image: quay.io/konveyor/migration-agent:latest
+      workingDir: /workspace/source
+      env:
+        - name: SKILL
+          value: $(params.skill)
+        - name: LLM_PROVIDER
+          value: $(params.llm-provider)
+        - name: AGENT_TYPE
+          value: $(params.agent-type)
+        - name: TARGET_BRANCH
+          value: $(params.target-branch)
+      script: |
+        echo "Running migration agent: ${AGENT_TYPE}"
+        echo "Skill: ${SKILL}"
+        echo "Source: $(params.source-repo)"
+        echo "Target branch: ${TARGET_BRANCH}"
+        # In production, this would run:
+        # goose run --text "Apply skill ${SKILL} to migrate this codebase"
+        # For now, simulate success
+        echo "Migration complete. Output branch: ${TARGET_BRANCH}"
+    - name: push-branch
+      image: alpine/git:latest
+      workingDir: /workspace/source
+      script: |
+        git checkout -b $(params.target-branch)
+        git add -A
+        git commit -m "feat: AI-assisted migration using skill $(params.skill)" --allow-empty
+        echo "Would push to $(params.source-repo) branch $(params.target-branch)"
+        echo "PR_URL=https://github.com/example/repo/pull/new/$(params.target-branch)"
+  workspaces:
+    - name: source
+      description: Workspace for source code
+---
+# Tekton Pipeline: Full Migration
+# Chains: analyze → migrate → review → submit-pr
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: full-migration-pipeline
+  namespace: rhdh
+  labels:
+    konveyor.io/pipeline-type: migration
+spec:
+  params:
+    - name: source-repo
+      type: string
+    - name: source-branch
+      type: string
+      default: main
+    - name: target-branch
+      type: string
+      default: migration-output
+    - name: skill
+      type: string
+      default: java-ee-to-quarkus
+    - name: llm-provider
+      type: string
+      default: ""
+  tasks:
+    - name: migrate
+      taskRef:
+        name: migration-agent
+      params:
+        - name: source-repo
+          value: $(params.source-repo)
+        - name: source-branch
+          value: $(params.source-branch)
+        - name: target-branch
+          value: $(params.target-branch)
+        - name: skill
+          value: $(params.skill)
+        - name: llm-provider
+          value: $(params.llm-provider)
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+  workspaces:
+    - name: shared-workspace

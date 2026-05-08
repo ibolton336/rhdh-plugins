@@ -8,7 +8,8 @@
         "pluginId": "migration-intelligence",
         "pluginPackage": "@red-hat-developer-hub/backstage-plugin-migration-intelligence",
         "pluginPackages": [
-          "@red-hat-developer-hub/backstage-plugin-migration-intelligence"
+          "@red-hat-developer-hub/backstage-plugin-migration-intelligence",
+          "@red-hat-developer-hub/backstage-plugin-migration-intelligence-backend"
         ],
         "supported-versions": "1.49.2"
       },
