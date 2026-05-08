@@ -29,13 +29,13 @@ import BuildIcon from '@material-ui/icons/Build';
 import AssessmentIcon from '@material-ui/icons/Assessment';
 
 import {
-  mockApplications,
   mockMigrators,
   ApplicationMigration,
   Migrator,
   MigrationStatus,
 } from './mockData';
 import { StartMigrationDialog } from '../StartMigrationDialog';
+import { useCatalogApplications } from '../../hooks/useCatalog';
 
 const useStyles = makeStyles(theme => ({
   migratorCard: {
@@ -73,17 +73,17 @@ function StatusIndicator({ status }: { status: MigrationStatus }) {
   }
 }
 
-function DashboardStats() {
+function DashboardStats({ applications }: { applications: ApplicationMigration[] }) {
   const classes = useStyles();
-  const total = mockApplications.length;
-  const completed = mockApplications.filter(
+  const total = applications.length;
+  const completed = applications.filter(
     a => a.status === 'completed',
   ).length;
-  const inProgress = mockApplications.filter(
+  const inProgress = applications.filter(
     a => a.status === 'in-progress',
   ).length;
-  const pending = mockApplications.filter(a => a.status === 'pending').length;
-  const failed = mockApplications.filter(a => a.status === 'failed').length;
+  const pending = applications.filter(a => a.status === 'pending').length;
+  const failed = applications.filter(a => a.status === 'failed').length;
 
   const stats = [
     { label: 'Total', value: total, icon: '📦' },
@@ -164,6 +164,8 @@ function MigratorCard({ migrator }: { migrator: Migrator }) {
 }
 
 export const MigrationDashboardContent = () => {
+  const { applications: catalogApps } = useCatalogApplications();
+  const appData = catalogApps;
   const classes = useStyles();
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -280,7 +282,7 @@ export const MigrationDashboardContent = () => {
           </SupportButton>
         </ContentHeader>
 
-        <DashboardStats />
+        <DashboardStats applications={appData} />
 
         <InfoCard
           title="Applications"
@@ -288,7 +290,7 @@ export const MigrationDashboardContent = () => {
         >
           <Table
             columns={columns}
-            data={mockApplications}
+            data={appData}
             title=""
             options={{ search: true, paging: false, padding: 'dense' }}
           />
@@ -308,7 +310,7 @@ export const MigrationDashboardContent = () => {
         <StartMigrationDialog
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}
-          applications={mockApplications.filter(a => a.status === 'pending')}
+          applications={appData.filter(a => a.status === 'pending')}
         />
 
     </Content>

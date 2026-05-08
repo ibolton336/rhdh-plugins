@@ -30,12 +30,24 @@ export interface PipelineRunStatus {
   name: string;
   status: MigrationStatus;
   completionTime?: string;
+  taskRuns?: Array<{ name: string; status: string }>;
+}
+
+export interface StartMigrationParams {
+  applicationName: string;
+  sourceRepo: string;
+  skill: string;
+  sourceBranch?: string;
+  llmProvider?: string;
 }
 
 export class KubernetesService {
   private client: k8s.CustomObjectsApi | undefined;
   private coreClient: k8s.CoreV1Api | undefined;
   private inCluster: boolean;
+
+  private static readonly NAMESPACE = 'rhdh';
+  private static readonly PIPELINE_NAME = 'full-migration-pipeline';
 
   constructor(private readonly logger: LoggerService) {
     this.inCluster = !!process.env.KUBERNETES_SERVICE_HOST;
@@ -60,6 +72,77 @@ export class KubernetesService {
     }
   }
 
+  async startMigration(params: StartMigrationParams): Promise<string> {
+    const timestamp = Date.now();
+    const sanitizedName = params.applicationName
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, '-')
+      .substring(0, 40);
+    const pipelineRunName = `migration-${sanitizedName}-${timestamp}`;
+    const targetBranch = `migration-${timestamp}`;
+
+    if (!this.inCluster || !this.client) {
+      this.logger.info(
+        `[MOCK] Creating PipelineRun: ${pipelineRunName} for app ${params.applicationName}`,
+      );
+      return pipelineRunName;
+    }
+
+    const pipelineRun = {
+      apiVersion: 'tekton.dev/v1',
+      kind: 'PipelineRun',
+      metadata: {
+        name: pipelineRunName,
+        namespace: KubernetesService.NAMESPACE,
+        labels: {
+          'migration-intelligence/app': sanitizedName,
+          'tekton.dev/pipeline': KubernetesService.PIPELINE_NAME,
+        },
+      },
+      spec: {
+        pipelineRef: {
+          name: KubernetesService.PIPELINE_NAME,
+        },
+        params: [
+          { name: 'source-repo', value: params.sourceRepo },
+          { name: 'source-branch', value: params.sourceBranch ?? 'main' },
+          { name: 'target-branch', value: targetBranch },
+          { name: 'skill', value: params.skill },
+          { name: 'llm-provider', value: params.llmProvider ?? 'openai' },
+        ],
+        workspaces: [
+          {
+            name: 'shared-workspace',
+            volumeClaimTemplate: {
+              spec: {
+                accessModes: ['ReadWriteOnce'],
+                resources: {
+                  requests: {
+                    storage: '1Gi',
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
+    };
+
+    this.logger.info(
+      `Creating PipelineRun ${pipelineRunName} in namespace ${KubernetesService.NAMESPACE}`,
+    );
+
+    await this.client.createNamespacedCustomObject({
+      group: 'tekton.dev',
+      version: 'v1',
+      namespace: KubernetesService.NAMESPACE,
+      plural: 'pipelineruns',
+      body: pipelineRun,
+    });
+
+    return pipelineRunName;
+  }
+
   async createPipelineRun(spec: PipelineRunSpec): Promise<string> {
     if (!this.inCluster || !this.client) {
       this.logger.info(`[MOCK] Creating PipelineRun: ${spec.name}`);
@@ -81,6 +164,21 @@ export class KubernetesService {
           name,
           value,
         })),
+        workspaces: [
+          {
+            name: 'shared-workspace',
+            volumeClaimTemplate: {
+              spec: {
+                accessModes: ['ReadWriteOnce'],
+                resources: {
+                  requests: {
+                    storage: '1Gi',
+                  },
+                },
+              },
+            },
+          },
+        ],
       },
     };
 
@@ -101,7 +199,7 @@ export class KubernetesService {
   ): Promise<PipelineRunStatus> {
     if (!this.inCluster || !this.client) {
       this.logger.info(`[MOCK] Getting PipelineRun status: ${name}`);
-      return { name, status: 'running' };
+      return { name, status: 'running', taskRuns: [] };
     }
 
     const response = await this.client.getNamespacedCustomObject({
@@ -114,7 +212,8 @@ export class KubernetesService {
 
     const obj = response as Record<string, unknown>;
     const statusObj = obj.status as Record<string, unknown> | undefined;
-    const conditions = (statusObj?.conditions as Array<Record<string, string>>) ?? [];
+    const conditions =
+      (statusObj?.conditions as Array<Record<string, string>>) ?? [];
     const condition = conditions.find(c => c.type === 'Succeeded');
 
     let status: MigrationStatus = 'pending';
@@ -124,24 +223,31 @@ export class KubernetesService {
       else status = 'running';
     }
 
+    // Extract TaskRun references
+    const childReferences =
+      (statusObj?.childReferences as Array<Record<string, string>>) ?? [];
+    const taskRuns = childReferences
+      .filter(ref => ref.kind === 'TaskRun')
+      .map(ref => ({
+        name: ref.name,
+        status: ref.pipelineTaskName ?? 'unknown',
+      }));
+
     return {
       name,
       status,
       completionTime: statusObj?.completionTime as string | undefined,
+      taskRuns,
     };
   }
 
-  async getPipelineRunLogs(
-    name: string,
-    namespace: string,
-  ): Promise<string> {
+  async getPipelineRunLogs(name: string, namespace: string): Promise<string> {
     if (!this.inCluster || !this.coreClient) {
       this.logger.info(`[MOCK] Getting logs for PipelineRun: ${name}`);
       return `[Mock logs for PipelineRun ${name} in ${namespace}]`;
     }
 
     try {
-      // List pods associated with the PipelineRun
       const pods = await this.coreClient.listNamespacedPod({
         namespace,
         labelSelector: `tekton.dev/pipelineRun=${name}`,
@@ -161,7 +267,9 @@ export class KubernetesService {
             });
             logs.push(`--- ${podName}/${container.name} ---\n${log}`);
           } catch {
-            logs.push(`--- ${podName}/${container.name} --- [no logs available]`);
+            logs.push(
+              `--- ${podName}/${container.name} --- [no logs available]`,
+            );
           }
         }
       }

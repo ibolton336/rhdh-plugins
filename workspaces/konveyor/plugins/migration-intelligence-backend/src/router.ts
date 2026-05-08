@@ -145,32 +145,96 @@ export async function createRouter(
 
   router.post('/migrations', async (req, res) => {
     try {
-      const body = req.body as StartMigrationRequest;
-      if (!body.name || !body.pipelineDefinitionId) {
-        throw new InputError('name and pipelineDefinitionId are required');
+      const body = req.body as {
+        applicationName?: string;
+        sourceRepo?: string;
+        skill?: string;
+        pipelineId?: string;
+        // Legacy fields
+        name?: string;
+        pipelineDefinitionId?: string;
+        namespace?: string;
+        params?: Record<string, string>;
+      };
+
+      // New direct migration flow: applicationName + sourceRepo + skill
+      if (body.applicationName && body.sourceRepo && body.skill) {
+        const pipelineRunName = await kubernetesService.startMigration({
+          applicationName: body.applicationName,
+          sourceRepo: body.sourceRepo,
+          skill: body.skill,
+        });
+
+        // Also persist to DB if pipelineId is provided
+        if (body.pipelineId) {
+          const migrationRequest: StartMigrationRequest = {
+            name: body.applicationName,
+            pipelineDefinitionId: body.pipelineId,
+            namespace: 'rhdh',
+            params: {
+              'source-repo': body.sourceRepo,
+              skill: body.skill,
+            },
+          };
+          try {
+            const migration = await databaseService.createMigration(
+              migrationRequest,
+              pipelineRunName,
+              'rhdh',
+            );
+            res.status(201).json({
+              migrationId: pipelineRunName,
+              id: migration.id,
+              pipelineRunName,
+              status: 'pending',
+            });
+          } catch {
+            // DB persistence failed but PipelineRun was created
+            res.status(201).json({
+              migrationId: pipelineRunName,
+              pipelineRunName,
+              status: 'pending',
+            });
+          }
+        } else {
+          res.status(201).json({
+            migrationId: pipelineRunName,
+            pipelineRunName,
+            status: 'pending',
+          });
+        }
+        return;
       }
 
-      const pipeline = await databaseService.getPipelineById(
-        body.pipelineDefinitionId,
-      );
-      if (!pipeline) {
-        throw new NotFoundError(
-          `Pipeline definition ${body.pipelineDefinitionId} not found`,
+      // Legacy flow: name + pipelineDefinitionId
+      const legacyBody = body as StartMigrationRequest;
+      if (!legacyBody.name || !legacyBody.pipelineDefinitionId) {
+        throw new InputError(
+          'Either (applicationName, sourceRepo, skill) or (name, pipelineDefinitionId) are required',
         );
       }
 
-      const namespace = body.namespace ?? 'default';
-      const pipelineRunName = `${body.name}-${Date.now()}`;
+      const pipeline = await databaseService.getPipelineById(
+        legacyBody.pipelineDefinitionId,
+      );
+      if (!pipeline) {
+        throw new NotFoundError(
+          `Pipeline definition ${legacyBody.pipelineDefinitionId} not found`,
+        );
+      }
+
+      const namespace = legacyBody.namespace ?? 'default';
+      const pipelineRunName = `${legacyBody.name}-${Date.now()}`;
 
       await kubernetesService.createPipelineRun({
         name: pipelineRunName,
         namespace,
         pipelineRef: pipeline.tektonPipelineRef,
-        params: body.params ?? {},
+        params: legacyBody.params ?? {},
       });
 
       const migration = await databaseService.createMigration(
-        body,
+        legacyBody,
         pipelineRunName,
         namespace,
       );
@@ -230,6 +294,34 @@ export async function createRouter(
         logger.error(`Failed to get migration: ${err}`);
         res.status(500).json({ error: 'Failed to get migration' });
       }
+    }
+  });
+
+  // Get migration status by PipelineRun name directly
+  router.get('/migrations/status/:pipelineRunName', async (req, res) => {
+    try {
+      const status = await kubernetesService.getPipelineRunStatus(
+        req.params.pipelineRunName,
+        'rhdh',
+      );
+      res.json(status);
+    } catch (err) {
+      logger.error(`Failed to get migration status: ${err}`);
+      res.status(500).json({ error: 'Failed to get migration status' });
+    }
+  });
+
+  // Get migration logs by PipelineRun name directly
+  router.get('/migrations/logs/:pipelineRunName', async (req, res) => {
+    try {
+      const logs = await kubernetesService.getPipelineRunLogs(
+        req.params.pipelineRunName,
+        'rhdh',
+      );
+      res.json({ logs });
+    } catch (err) {
+      logger.error(`Failed to get migration logs: ${err}`);
+      res.status(500).json({ error: 'Failed to get migration logs' });
     }
   });
 
