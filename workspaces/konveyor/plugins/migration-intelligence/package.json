@@ -86,7 +86,9 @@
     "exposedModules": {
       "Alpha": "./src/alpha/index.tsx",
       "PluginRoot": "./src/index.ts",
-      "MigrationIntelligencePlugin": "./src/index.ts"
+      "MigrationIntelligencePlugin": "./src/index.ts",
+      "AgentDefinitionsPage": "./src/components/AgentDefinitionsPage/index.ts",
+      "PipelineDefinitionsPage": "./src/components/PipelineDefinitionsPage/index.ts"
     }
   },
   "repository": {

@@ -31,5 +31,33 @@
         "migration"
       ]
     }
+  },
+  {
+    "red-hat-developer-hub-backstage-plugin-migration-intelligence-backend": {
+      "name": "@red-hat-developer-hub/backstage-plugin-migration-intelligence-backend-dynamic",
+      "version": "0.1.0",
+      "backstage": {
+        "role": "backend-plugin",
+        "pluginId": "migration-intelligence",
+        "pluginPackage": "@red-hat-developer-hub/backstage-plugin-migration-intelligence-backend",
+        "pluginPackages": [
+          "@red-hat-developer-hub/backstage-plugin-migration-intelligence",
+          "@red-hat-developer-hub/backstage-plugin-migration-intelligence-backend"
+        ],
+        "supported-versions": "1.49.2"
+      },
+      "homepage": "https://red.ht/rhdh",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/redhat-developer/rhdh-plugins.git",
+        "directory": "workspaces/konveyor/plugins/migration-intelligence-backend"
+      },
+      "license": "Apache-2.0",
+      "bugs": "https://github.com/redhat-developer/rhdh-plugins/issues",
+      "keywords": [
+        "backstage",
+        "plugin"
+      ]
+    }
   }
 ]

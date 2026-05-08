@@ -254,3 +254,5 @@ export const AgentDefinitionsPage = () => {
     </Page>
   );
 };
+
+export { AgentDefinitionsPage as AgentDefinitionsContent };

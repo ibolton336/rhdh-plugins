@@ -48,6 +48,12 @@ export const migrationIntelligencePlugin = createBackendPlugin({
           }),
         );
 
+        // Allow all routes to be accessed by authenticated users (cookie/token)
+        http.addAuthPolicy({
+          path: '/',
+          allow: 'user-cookie',
+        });
+
         http.addAuthPolicy({
           path: '/health',
           allow: 'unauthenticated',

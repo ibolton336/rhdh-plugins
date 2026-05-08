@@ -86,3 +86,5 @@ export const PipelineDefinitionsPage = () => {
     </Page>
   );
 };
+
+export { PipelineDefinitionsPage as PipelineDefinitionsContent };
