@@ -1,0 +1,22 @@
+# For use with rhdh-local (Docker Compose)
+# Copy to: /path/to/rhdh-local/configs/dynamic-plugins/dynamic-plugins.override.yaml
+# Also add SKIP_INTEGRITY_CHECK=true to default.env
+
+plugins:
+  - package: /opt/app-root/src/local-plugins/red-hat-developer-hub-backstage-plugin-migration-intelligence
+    disabled: false
+    pluginConfig:
+      dynamicPlugins:
+        frontend:
+          red-hat-developer-hub.backstage-plugin-migration-intelligence:
+            dynamicRoutes:
+              - path: /migration-intelligence
+                importName: MigrationIntelligencePage
+                menuItem:
+                  text: "Migration Intelligence"
+                  icon: migrationIcon
+            appIcons:
+              - name: migrationIcon
+                importName: MigrationIcon
+  - package: /opt/app-root/src/local-plugins/red-hat-developer-hub-backstage-plugin-migration-intelligence-backend
+    disabled: false
