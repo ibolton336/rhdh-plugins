@@ -12,6 +12,8 @@ metadata:
     konveyor.io/target-technology: quarkus-3.8
     konveyor.io/migration-status: pending
     konveyor.io/complexity: high
+    janus-idp.io/tekton: coolstore
+    backstage.io/kubernetes-namespace: rhdh
 spec:
   type: service
   lifecycle: production
