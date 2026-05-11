@@ -159,6 +159,90 @@ function PipelineProgress({ status, taskRuns }: { status: string; taskRuns?: any
   );
 }
 
+function MigrationResults({ logs, migration }: { logs: string | null; migration: any }) {
+  const classes = useStyles();
+  if (!logs || (migration.status !== 'succeeded' && migration.status !== 'completed')) return null;
+
+  // Parse results from logs
+  const branchMatch = logs.match(/Changes committed on branch: ([\w-]+)/);
+  const commitMatch = logs.match(/\[([\w-]+) ([a-f0-9]+)\] feat:/);
+  const fileMatch = logs.match(/(\d+) file(?:s?) changed, (\d+) insertion/);
+  const createdFiles = logs.match(/create mode \d+ ([^\n]+)/g);
+  const modifiedFiles = logs.match(/\d+ file(?:s?) changed/);
+
+  // Extract the goose output summary (between "Running goose agent..." and "=== Migration Agent Complete ===")
+  const agentOutputStart = logs.indexOf('Running goose agent...');
+  const agentOutputEnd = logs.indexOf('=== Migration Agent Complete ===');
+  let summary = '';
+  if (agentOutputStart > -1 && agentOutputEnd > -1) {
+    summary = logs.substring(agentOutputStart + 22, agentOutputEnd).trim();
+    // Get last ~500 chars as the summary/conclusion
+    if (summary.length > 800) {
+      summary = '...' + summary.substring(summary.length - 800);
+    }
+  }
+
+  return (
+    <Box mt={2}>
+      <Typography variant="subtitle2" gutterBottom>Migration Results</Typography>
+      <Paper variant="outlined" style={{ padding: 16 }}>
+        <Box display="flex" flexWrap="wrap" style={{ gap: 16 }} mb={2}>
+          {branchMatch && (
+            <Box>
+              <Typography variant="caption" color="textSecondary">Branch</Typography>
+              <Typography variant="body2" style={{ fontFamily: 'monospace', fontWeight: 600 }}>
+                {branchMatch[1]}
+              </Typography>
+            </Box>
+          )}
+          {commitMatch && (
+            <Box>
+              <Typography variant="caption" color="textSecondary">Commit</Typography>
+              <Typography variant="body2" style={{ fontFamily: 'monospace' }}>
+                {commitMatch[2]}
+              </Typography>
+            </Box>
+          )}
+          {fileMatch && (
+            <Box>
+              <Typography variant="caption" color="textSecondary">Changes</Typography>
+              <Typography variant="body2">
+                {fileMatch[1]} file(s), +{fileMatch[2]} lines
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
+        {createdFiles && createdFiles.length > 0 && (
+          <Box mb={2}>
+            <Typography variant="caption" color="textSecondary">Files Created</Typography>
+            {createdFiles.map((f: string, i: number) => {
+              const filename = f.replace(/create mode \d+ /, '');
+              return (
+                <Box key={i} display="flex" alignItems="center" style={{ gap: 4 }}>
+                  <Chip label="+" size="small" style={{ backgroundColor: '#e8f5e9', color: '#2e7d32', minWidth: 24, height: 20 }} />
+                  <Typography variant="body2" style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                    {filename}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </Box>
+        )}
+
+        {summary && (
+          <Box>
+            <Typography variant="caption" color="textSecondary">Agent Output (summary)</Typography>
+            <Paper variant="outlined" className={classes.logContainer} style={{ maxHeight: 200, marginTop: 4 }}>
+              {summary}
+            </Paper>
+          </Box>
+        )}
+      </Paper>
+    </Box>
+  );
+}
+
 function MigrationRow({ migration, defaultExpanded }: { migration: any; defaultExpanded?: boolean }) {
   const classes = useStyles();
   const [expanded, setExpanded] = useState(defaultExpanded || false);
@@ -255,6 +339,7 @@ function MigrationRow({ migration, defaultExpanded }: { migration: any; defaultE
                   {logs || 'Loading...'}
                 </div>
               </Paper>
+              <MigrationResults logs={logs} migration={migration} />
             </Box>
           </Collapse>
         </TableCell>
