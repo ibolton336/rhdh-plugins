@@ -242,9 +242,16 @@ export const AgentDefinitionsPage = () => {
         )}
         <Table
           columns={columns}
-          data={agents}
+          data={agents || []}
           title=""
-          options={{ search: true, paging: false, padding: 'dense' }}
+          options={{
+            search: true,
+            paging: true,
+            pageSize: 10,
+            padding: 'dense',
+            emptyRowsWhenPaging: false,
+          }}
+          localization={{ body: { emptyDataSourceMessage: 'No agent definitions found. Create one to get started.' } }}
         />
         <CreateAgentDialog
           open={dialogOpen}

@@ -75,13 +75,17 @@ export const PipelineDefinitionsPage = () => {
             Using mock data — backend unavailable
           </Alert>
         )}
-        <Grid container spacing={3}>
-          {pipelines.map(pipeline => (
-            <Grid item xs={12} key={pipeline.id}>
-              <PipelineCard pipeline={pipeline} />
-            </Grid>
-          ))}
-        </Grid>
+        {(!pipelines || pipelines.length === 0) ? (
+          <Alert severity="info">No pipeline definitions found. Define a pipeline to orchestrate agent tasks.</Alert>
+        ) : (
+          <Grid container spacing={3}>
+            {pipelines.map(pipeline => (
+              <Grid item xs={12} key={pipeline.id}>
+                <PipelineCard pipeline={pipeline} />
+              </Grid>
+            ))}
+          </Grid>
+        )}
       </Content>
     </Page>
   );

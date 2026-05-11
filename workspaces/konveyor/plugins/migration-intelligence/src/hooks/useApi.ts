@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useApi } from '@backstage/core-plugin-api';
 import { migrationIntelligenceApiRef, AgentDefinition, PipelineDefinition, Migration } from '../api';
 import { mockAgentDefinitions } from '../components/AgentDefinitionsPage/mockData';
@@ -8,6 +8,7 @@ export function useAgentDefinitions() {
   const [agents, setAgents] = useState<AgentDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const fetchedRef = useRef(false);
 
   let api: any;
   try {
@@ -17,6 +18,9 @@ export function useAgentDefinitions() {
   }
 
   useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
     if (!api) {
       setAgents(mockAgentDefinitions as any);
       setLoading(false);
@@ -24,7 +28,7 @@ export function useAgentDefinitions() {
       return;
     }
     api.getAgents()
-      .then((data: AgentDefinition[]) => { setAgents(data); setLoading(false); })
+      .then((data: AgentDefinition[]) => { setAgents(Array.isArray(data) ? data : []); setLoading(false); })
       .catch((err: Error) => {
         console.warn('Backend unavailable, using mock data:', err.message);
         setAgents(mockAgentDefinitions as any);
@@ -51,6 +55,7 @@ export function usePipelineDefinitions() {
   const [pipelines, setPipelines] = useState<PipelineDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const fetchedRef = useRef(false);
 
   let api: any;
   try {
@@ -60,6 +65,9 @@ export function usePipelineDefinitions() {
   }
 
   useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
     if (!api) {
       setPipelines(mockPipelineDefinitions as any);
       setLoading(false);
@@ -67,7 +75,7 @@ export function usePipelineDefinitions() {
       return;
     }
     api.getPipelines()
-      .then((data: PipelineDefinition[]) => { setPipelines(data); setLoading(false); })
+      .then((data: PipelineDefinition[]) => { setPipelines(Array.isArray(data) ? data : []); setLoading(false); })
       .catch((err: Error) => {
         console.warn('Backend unavailable, using mock data:', err.message);
         setPipelines(mockPipelineDefinitions as any);
