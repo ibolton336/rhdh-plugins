@@ -1,0 +1,67 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: migration-agent
+  namespace: rhdh
+spec:
+  params:
+    - name: source-repo
+      type: string
+      description: Git repo URL to migrate
+    - name: source-branch
+      type: string
+      default: main
+    - name: target-branch
+      type: string
+      default: migration-output
+    - name: skill
+      type: string
+      default: java-ee-to-quarkus
+      description: Goose skill to run
+    - name: llm-provider
+      type: string
+      default: ""
+      description: "LLM provider (e.g. anthropic, openai, ollama)"
+  workspaces:
+    - name: source
+  steps:
+    - name: clone
+      image: alpine/git:latest
+      script: |
+        #!/bin/sh
+        set -ex
+        cd $(workspaces.source.path)
+        git clone --branch $(params.source-branch) $(params.source-repo) repo
+        cd repo
+        git checkout -b $(params.target-branch)
+    - name: migrate
+      image: quay.io/ibolton/migration-agent:latest
+      workingDir: $(workspaces.source.path)/repo
+      env:
+        - name: SKILL
+          value: $(params.skill)
+        - name: SOURCE_REPO
+          value: $(params.source-repo)
+        - name: TARGET_BRANCH
+          value: $(params.target-branch)
+        - name: GOOSE_PROVIDER
+          value: $(params.llm-provider)
+      command:
+        - /opt/entrypoint.sh
+    - name: push-results
+      image: alpine/git:latest
+      workingDir: $(workspaces.source.path)/repo
+      script: |
+        #!/bin/sh
+        set -ex
+        git config user.email "migration-agent@konveyor.io"
+        git config user.name "Migration Agent"
+
+        if [ -n "$(git status --porcelain)" ]; then
+          git add -A
+          git commit -m "feat: automated migration via konveyor skill"
+          echo "Changes committed on branch: $(params.target-branch)"
+          echo "NOTE: Git push requires credentials - configure a git secret for production use."
+        else
+          echo "No changes detected after migration."
+        fi

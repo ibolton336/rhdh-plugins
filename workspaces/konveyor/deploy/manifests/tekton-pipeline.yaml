@@ -1,0 +1,46 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  annotations:
+      {"apiVersion":"tekton.dev/v1","kind":"Pipeline","metadata":{"annotations":{},"labels":{"konveyor.io/pipeline-type":"migration"},"name":"full-migration-pipeline","namespace":"rhdh"},"spec":{"params":[{"name":"source-repo","type":"string"},{"default":"main","name":"source-branch","type":"string"},{"default":"migration-output","name":"target-branch","type":"string"},{"default":"java-ee-to-quarkus","name":"skill","type":"string"},{"default":"","name":"llm-provider","type":"string"}],"tasks":[{"name":"migrate","params":[{"name":"source-repo","value":"$(params.source-repo)"},{"name":"source-branch","value":"$(params.source-branch)"},{"name":"target-branch","value":"$(params.target-branch)"},{"name":"skill","value":"$(params.skill)"},{"name":"llm-provider","value":"$(params.llm-provider)"}],"taskRef":{"name":"migration-agent"},"workspaces":[{"name":"source","workspace":"shared-workspace"}]}],"workspaces":[{"name":"shared-workspace"}]}}
+  labels:
+    konveyor.io/pipeline-type: migration
+  name: full-migration-pipeline
+  namespace: rhdh
+spec:
+  params:
+  - name: source-repo
+    type: string
+  - default: main
+    name: source-branch
+    type: string
+  - default: migration-output
+    name: target-branch
+    type: string
+  - default: java-ee-to-quarkus
+    name: skill
+    type: string
+  - default: ""
+    name: llm-provider
+    type: string
+  tasks:
+  - name: migrate
+    params:
+    - name: source-repo
+      value: $(params.source-repo)
+    - name: source-branch
+      value: $(params.source-branch)
+    - name: target-branch
+      value: $(params.target-branch)
+    - name: skill
+      value: $(params.skill)
+    - name: llm-provider
+      value: $(params.llm-provider)
+    taskRef:
+      kind: Task
+      name: migration-agent
+    workspaces:
+    - name: source
+      workspace: shared-workspace
+  workspaces:
+  - name: shared-workspace
