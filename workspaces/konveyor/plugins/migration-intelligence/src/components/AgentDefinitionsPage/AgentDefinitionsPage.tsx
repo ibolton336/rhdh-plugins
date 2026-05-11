@@ -4,17 +4,17 @@ import {
   Page,
   Content,
   ContentHeader,
-  Table,
-  TableColumn,
   StatusOK,
   StatusWarning,
   Progress,
+  InfoCard,
 } from '@backstage/core-components';
 import {
   Chip,
   Button,
   Typography,
   Box,
+  Grid,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -25,6 +25,13 @@ import {
   InputLabel,
   Select,
   Input,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import { Alert } from '@material-ui/lab';
@@ -139,83 +146,6 @@ export const AgentDefinitionsPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { agents, loading, error } = useAgentDefinitions();
 
-  const columns: TableColumn<AgentDefinition>[] = [
-    {
-      title: 'Name',
-      field: 'name',
-      render: row => (
-        <Box>
-          <Typography variant="body1" style={{ fontWeight: 600 }}>
-            {row.name}
-          </Typography>
-          <Typography variant="caption" color="textSecondary">
-            {row.description}
-          </Typography>
-        </Box>
-      ),
-    },
-    {
-      title: 'LLM Provider',
-      field: 'llmProvider',
-      render: row => (
-        <Box>
-          <Typography variant="body2">{row.llmProvider}</Typography>
-          <Typography variant="caption" color="textSecondary">
-            {row.llmEndpoint}
-          </Typography>
-        </Box>
-      ),
-    },
-    {
-      title: 'Skill',
-      field: 'skill',
-      render: row => <Chip label={row.skill} size="small" variant="outlined" />,
-    },
-    {
-      title: 'Rules',
-      field: 'rules',
-      render: row => (
-        <Box display="flex" flexWrap="wrap" style={{ gap: 4 }}>
-          {row.rules.map(r => (
-            <Chip key={r} label={r} size="small" variant="outlined" />
-          ))}
-        </Box>
-      ),
-    },
-    {
-      title: 'Source',
-      field: 'sourceTechnologies',
-      render: row => (
-        <Box display="flex" flexWrap="wrap" style={{ gap: 4 }}>
-          {row.sourceTechnologies.map(t => (
-            <Chip key={t} label={t} size="small" />
-          ))}
-        </Box>
-      ),
-    },
-    {
-      title: 'Target',
-      field: 'targetTechnologies',
-      render: row => (
-        <Box display="flex" flexWrap="wrap" style={{ gap: 4 }}>
-          {row.targetTechnologies.map(t => (
-            <Chip key={t} label={t} size="small" color="primary" />
-          ))}
-        </Box>
-      ),
-    },
-    {
-      title: 'Status',
-      field: 'status',
-      render: row =>
-        row.status === 'active' ? (
-          <StatusOK>Active</StatusOK>
-        ) : (
-          <StatusWarning>Draft</StatusWarning>
-        ),
-    },
-  ];
-
   if (loading) return <Progress />;
 
   return (
@@ -240,19 +170,80 @@ export const AgentDefinitionsPage = () => {
             Using mock data — backend unavailable
           </Alert>
         )}
-        <Table
-          columns={columns}
-          data={agents || []}
-          title=""
-          options={{
-            search: true,
-            paging: true,
-            pageSize: 10,
-            padding: 'dense',
-            emptyRowsWhenPaging: false,
-          }}
-          localization={{ body: { emptyDataSourceMessage: 'No agent definitions found. Create one to get started.' } }}
-        />
+        {(!agents || agents.length === 0) ? (
+          <InfoCard title="No Agent Definitions">
+            <Typography variant="body1">
+              No agent definitions found. Create one to get started.
+            </Typography>
+          </InfoCard>
+        ) : (
+          <TableContainer component={Paper}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>LLM Provider</TableCell>
+                  <TableCell>Skill</TableCell>
+                  <TableCell>Rules</TableCell>
+                  <TableCell>Source</TableCell>
+                  <TableCell>Target</TableCell>
+                  <TableCell>Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {agents.map((row: AgentDefinition) => (
+                  <TableRow key={row.id}>
+                    <TableCell>
+                      <Typography variant="body2" style={{ fontWeight: 600 }}>
+                        {row.name}
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        {row.description}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{row.llmProvider}</Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        {row.llmEndpoint}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={row.skill} size="small" variant="outlined" />
+                    </TableCell>
+                    <TableCell>
+                      <Box display="flex" flexWrap="wrap" style={{ gap: 4 }}>
+                        {row.rules.map(r => (
+                          <Chip key={r} label={r} size="small" variant="outlined" />
+                        ))}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Box display="flex" flexWrap="wrap" style={{ gap: 4 }}>
+                        {row.sourceTechnologies.map(t => (
+                          <Chip key={t} label={t} size="small" />
+                        ))}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Box display="flex" flexWrap="wrap" style={{ gap: 4 }}>
+                        {row.targetTechnologies.map(t => (
+                          <Chip key={t} label={t} size="small" color="primary" />
+                        ))}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      {row.status === 'active' ? (
+                        <StatusOK>Active</StatusOK>
+                      ) : (
+                        <StatusWarning>Draft</StatusWarning>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
         <CreateAgentDialog
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}
