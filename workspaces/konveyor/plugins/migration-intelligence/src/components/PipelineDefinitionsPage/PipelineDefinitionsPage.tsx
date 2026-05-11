@@ -35,22 +35,26 @@ function PipelineCard({ pipeline }: { pipeline: PipelineDefinition }) {
         )
       }
     >
-      <Stepper alternativeLabel>
-        {pipeline.steps.map(step => (
-          <Step key={step.order} active>
-            <StepLabel>
-              <Typography variant="body2" style={{ fontWeight: 600 }}>
-                {step.agentName}
-              </Typography>
-              <Typography variant="caption" color="textSecondary">
-                {step.description}
-              </Typography>
-            </StepLabel>
-          </Step>
-        ))}
-      </Stepper>
+      {(pipeline.steps && pipeline.steps.length > 0) ? (
+        <Stepper alternativeLabel>
+          {pipeline.steps.map(step => (
+            <Step key={step.order} active>
+              <StepLabel>
+                <Typography variant="body2" style={{ fontWeight: 600 }}>
+                  {step.agentName}
+                </Typography>
+                <Typography variant="caption" color="textSecondary">
+                  {step.description}
+                </Typography>
+              </StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+      ) : (
+        <Typography variant="body2" color="textSecondary">No steps defined</Typography>
+      )}
       <Box mt={1} display="flex" style={{ gap: 8 }}>
-        <Chip label={`${pipeline.steps.length} steps`} size="small" variant="outlined" />
+        <Chip label={`${(pipeline.steps || []).length} steps`} size="small" variant="outlined" />
         <Chip label={pipeline.status} size="small" color={pipeline.status === 'active' ? 'primary' : 'default'} />
       </Box>
     </InfoCard>

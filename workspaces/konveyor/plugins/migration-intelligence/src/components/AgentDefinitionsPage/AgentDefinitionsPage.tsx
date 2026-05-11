@@ -212,21 +212,21 @@ export const AgentDefinitionsPage = () => {
                     </TableCell>
                     <TableCell>
                       <Box display="flex" flexWrap="wrap" style={{ gap: 4 }}>
-                        {row.rules.map(r => (
+                        {(row.rules || []).map(r => (
                           <Chip key={r} label={r} size="small" variant="outlined" />
                         ))}
                       </Box>
                     </TableCell>
                     <TableCell>
                       <Box display="flex" flexWrap="wrap" style={{ gap: 4 }}>
-                        {row.sourceTechnologies.map(t => (
+                        {(row.sourceTechnologies || []).map(t => (
                           <Chip key={t} label={t} size="small" />
                         ))}
                       </Box>
                     </TableCell>
                     <TableCell>
                       <Box display="flex" flexWrap="wrap" style={{ gap: 4 }}>
-                        {row.targetTechnologies.map(t => (
+                        {(row.targetTechnologies || []).map(t => (
                           <Chip key={t} label={t} size="small" color="primary" />
                         ))}
                       </Box>
