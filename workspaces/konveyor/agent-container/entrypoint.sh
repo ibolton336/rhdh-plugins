@@ -48,7 +48,11 @@ if ! command -v goose &> /dev/null; then
 fi
 
 # Run goose
-goose run --no-session --quiet $INSTRUCTIONS --text "Migrate the code in this directory. Apply all necessary transformations for modernization."
+if [ -n "$INSTRUCTIONS" ]; then
+  goose run --no-session --quiet $INSTRUCTIONS
+else
+  goose run --no-session --quiet --text "Migrate the code in this directory. Apply all necessary transformations for modernization."
+fi
 
 echo ""
 echo "=== Migration Agent Complete ==="
