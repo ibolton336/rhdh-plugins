@@ -2,14 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useApi } from '@backstage/core-plugin-api';
 import { catalogApiRef } from '@backstage/plugin-catalog-react';
 import { ApplicationMigration, MigrationStatus } from '../components/MigrationDashboardPage/mockData';
-import { mockApplications } from '../components/MigrationDashboardPage/mockData';
 
 /**
  * Fetches applications from the Backstage catalog that have konveyor.io annotations.
- * Falls back to mock data if catalog API is unavailable.
+ * Shows empty state if no migration candidates found.
  */
 export function useCatalogApplications() {
-  const [applications, setApplications] = useState<ApplicationMigration[]>(mockApplications);
+  const [applications, setApplications] = useState<ApplicationMigration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [fromCatalog, setFromCatalog] = useState(false);
@@ -27,8 +26,9 @@ export function useCatalogApplications() {
     fetchedRef.current = true;
 
     if (!catalogApi) {
-      setApplications(mockApplications);
+      setApplications([]);
       setLoading(false);
+      setError(new Error('Catalog API not available'));
       return;
     }
 
@@ -41,13 +41,6 @@ export function useCatalogApplications() {
       })
       .then((response: any) => {
         const entities = (response && response.items) || [];
-        if (entities.length === 0) {
-          // No catalog entities found, use mocks
-          setApplications(mockApplications);
-          setLoading(false);
-          return;
-        }
-
         const apps: ApplicationMigration[] = entities.map((entity: any, idx: number) => ({
           id: entity.metadata.uid || `catalog-${idx}`,
           name: entity.metadata.name,
@@ -72,8 +65,8 @@ export function useCatalogApplications() {
         setLoading(false);
       })
       .catch((err: Error) => {
-        console.warn('Catalog API unavailable, using mock data:', err.message);
-        setApplications(mockApplications);
+        console.warn('Catalog API error:', err.message);
+        setApplications([]);
         setError(err);
         setLoading(false);
       });

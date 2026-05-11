@@ -11,3 +11,7 @@ export const agentDefinitionsRouteRef = createRouteRef({
 export const pipelineDefinitionsRouteRef = createRouteRef({
   id: 'migration-intelligence/pipeline-definitions',
 });
+
+export const migrationsRouteRef = createRouteRef({
+  id: 'migration-intelligence/migrations',
+});

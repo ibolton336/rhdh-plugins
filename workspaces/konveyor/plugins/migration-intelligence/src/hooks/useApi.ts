@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useApi } from '@backstage/core-plugin-api';
 import { migrationIntelligenceApiRef, AgentDefinition, PipelineDefinition, Migration } from '../api';
-import { mockAgentDefinitions } from '../components/AgentDefinitionsPage/mockData';
-import { mockPipelineDefinitions } from '../components/PipelineDefinitionsPage/mockData';
 
 export function useAgentDefinitions() {
   const [agents, setAgents] = useState<AgentDefinition[]>([]);
@@ -22,27 +20,23 @@ export function useAgentDefinitions() {
     fetchedRef.current = true;
 
     if (!api) {
-      setAgents(mockAgentDefinitions as any);
+      setAgents([]);
       setLoading(false);
-      setError(new Error('No backend — using mock data'));
+      setError(new Error('Backend API not available'));
       return;
     }
     api.getAgents()
       .then((data: AgentDefinition[]) => { setAgents(Array.isArray(data) ? data : []); setLoading(false); })
       .catch((err: Error) => {
-        console.warn('Backend unavailable, using mock data:', err.message);
-        setAgents(mockAgentDefinitions as any);
+        console.warn('Failed to fetch agents:', err.message);
+        setAgents([]);
         setError(err);
         setLoading(false);
       });
   }, [api]);
 
   const createAgent = useCallback(async (agent: Omit<AgentDefinition, 'id'>) => {
-    if (!api) {
-      const newAgent = { ...agent, id: `agent-${Date.now()}` } as AgentDefinition;
-      setAgents(prev => [...prev, newAgent]);
-      return newAgent;
-    }
+    if (!api) throw new Error('Backend API not available');
     const created = await api.createAgent(agent);
     setAgents(prev => [...prev, created]);
     return created;
@@ -69,27 +63,23 @@ export function usePipelineDefinitions() {
     fetchedRef.current = true;
 
     if (!api) {
-      setPipelines(mockPipelineDefinitions as any);
+      setPipelines([]);
       setLoading(false);
-      setError(new Error('No backend — using mock data'));
+      setError(new Error('Backend API not available'));
       return;
     }
     api.getPipelines()
       .then((data: PipelineDefinition[]) => { setPipelines(Array.isArray(data) ? data : []); setLoading(false); })
       .catch((err: Error) => {
-        console.warn('Backend unavailable, using mock data:', err.message);
-        setPipelines(mockPipelineDefinitions as any);
+        console.warn('Failed to fetch pipelines:', err.message);
+        setPipelines([]);
         setError(err);
         setLoading(false);
       });
   }, [api]);
 
   const createPipeline = useCallback(async (pipeline: Omit<PipelineDefinition, 'id'>) => {
-    if (!api) {
-      const newPipeline = { ...pipeline, id: `pipeline-${Date.now()}` } as PipelineDefinition;
-      setPipelines(prev => [...prev, newPipeline]);
-      return newPipeline;
-    }
+    if (!api) throw new Error('Backend API not available');
     const created = await api.createPipeline(pipeline);
     setPipelines(prev => [...prev, created]);
     return created;
@@ -102,6 +92,7 @@ export function useMigrations() {
   const [migrations, setMigrations] = useState<Migration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const fetchedRef = useRef(false);
 
   let api: any;
   try {
@@ -111,37 +102,23 @@ export function useMigrations() {
   }
 
   useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
     if (!api) {
       setMigrations([]);
       setLoading(false);
       return;
     }
     api.getMigrations()
-      .then((data: Migration[]) => { setMigrations(data); setLoading(false); })
+      .then((data: Migration[]) => { setMigrations(Array.isArray(data) ? data : []); setLoading(false); })
       .catch((err: Error) => {
-        console.warn('Backend unavailable:', err.message);
+        console.warn('Failed to fetch migrations:', err.message);
         setMigrations([]);
         setError(err);
         setLoading(false);
       });
   }, [api]);
 
-  const startMigration = useCallback(async (applicationId: string, pipelineId: string) => {
-    if (!api) {
-      const mock: Migration = {
-        id: `mig-${Date.now()}`,
-        applicationName: applicationId,
-        pipelineName: pipelineId,
-        status: 'running',
-        startedAt: new Date().toISOString(),
-      };
-      setMigrations(prev => [...prev, mock]);
-      return mock;
-    }
-    const created = await api.startMigration({ applicationId, pipelineId });
-    setMigrations(prev => [...prev, created]);
-    return created;
-  }, [api]);
-
-  return { migrations, loading, error, startMigration };
+  return { migrations, loading, error };
 }

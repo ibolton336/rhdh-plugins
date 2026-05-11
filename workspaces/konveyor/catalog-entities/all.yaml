@@ -7,7 +7,3 @@ spec:
   type: url
   targets:
     - ./coolstore.yaml
-    - ./inventory-service.yaml
-    - ./order-service.yaml
-    - ./payment-gateway.yaml
-    - ./notification-service.yaml

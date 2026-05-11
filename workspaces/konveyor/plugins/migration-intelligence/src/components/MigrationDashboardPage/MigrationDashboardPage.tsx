@@ -7,6 +7,7 @@ import {
 import { MigrationDashboardContent } from './MigrationDashboardContent';
 import { AgentDefinitionsContent } from '../AgentDefinitionsPage/AgentDefinitionsPage';
 import { PipelineDefinitionsContent } from '../PipelineDefinitionsPage/PipelineDefinitionsPage';
+import { MigrationsContent } from '../MigrationsPage';
 
 export const MigrationDashboardPage = () => {
   return (
@@ -24,6 +25,9 @@ export const MigrationDashboardPage = () => {
         </TabbedLayout.Route>
         <TabbedLayout.Route path="/pipelines" title="Pipeline Definitions">
           <PipelineDefinitionsContent />
+        </TabbedLayout.Route>
+        <TabbedLayout.Route path="/migrations" title="Migrations">
+          <MigrationsContent />
         </TabbedLayout.Route>
       </TabbedLayout>
     </Page>

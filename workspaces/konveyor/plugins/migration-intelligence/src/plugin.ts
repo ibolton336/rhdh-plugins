@@ -6,7 +6,7 @@ import {
   fetchApiRef,
 } from '@backstage/core-plugin-api';
 
-import { rootRouteRef, agentDefinitionsRouteRef, pipelineDefinitionsRouteRef } from './routes';
+import { rootRouteRef, agentDefinitionsRouteRef, pipelineDefinitionsRouteRef, migrationsRouteRef } from './routes';
 import { migrationIntelligenceApiRef } from './api';
 import { MigrationIntelligenceClient } from './api/MigrationIntelligenceClient';
 
@@ -18,6 +18,7 @@ export const migrationIntelligencePlugin = createPlugin({
     root: rootRouteRef,
     agentDefinitions: agentDefinitionsRouteRef,
     pipelineDefinitions: pipelineDefinitionsRouteRef,
+    migrations: migrationsRouteRef,
   },
   apis: [
     createApiFactory({
@@ -59,5 +60,16 @@ export const PipelineDefinitionsPage = migrationIntelligencePlugin.provide(
         m => m.PipelineDefinitionsPage,
       ),
     mountPoint: pipelineDefinitionsRouteRef,
+  }),
+);
+
+export const MigrationsPage = migrationIntelligencePlugin.provide(
+  createRoutableExtension({
+    name: 'MigrationsPage',
+    component: () =>
+      import('./components/MigrationsPage').then(
+        m => m.MigrationsPage,
+      ),
+    mountPoint: migrationsRouteRef,
   }),
 );
