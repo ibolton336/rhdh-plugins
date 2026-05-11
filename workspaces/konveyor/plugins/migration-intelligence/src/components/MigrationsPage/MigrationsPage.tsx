@@ -353,6 +353,7 @@ export const MigrationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const initialLoadDone = useRef(false);
 
   let api: any;
   try {
@@ -368,7 +369,11 @@ export const MigrationsPage = () => {
       return;
     }
 
-    setLoading(true);
+    // Only show loading spinner on first load
+    if (!initialLoadDone.current) {
+      setLoading(true);
+    }
+
     api.getMigrations()
       .then((data: any[]) => {
         const sorted = (Array.isArray(data) ? data : []).sort((a: any, b: any) => {
@@ -378,11 +383,13 @@ export const MigrationsPage = () => {
         });
         setMigrations(sorted);
         setLoading(false);
+        initialLoadDone.current = true;
       })
       .catch((err: Error) => {
         setMigrations([]);
         setError(err);
         setLoading(false);
+        initialLoadDone.current = true;
       });
   }, [api, refreshKey]);
 
