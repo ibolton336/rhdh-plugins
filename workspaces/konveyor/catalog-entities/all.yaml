@@ -1,0 +1,13 @@
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: migration-intelligence-apps
+  description: Migration candidate applications for Konveyor Migration Intelligence
+spec:
+  type: url
+  targets:
+    - ./coolstore.yaml
+    - ./inventory-service.yaml
+    - ./order-service.yaml
+    - ./payment-gateway.yaml
+    - ./notification-service.yaml

@@ -1,0 +1,18 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: coolstore
+  description: "Java EE e-commerce app — EJBs, JMS, JSF"
+  tags:
+    - migration-candidate
+    - java
+  annotations:
+    github.com/project-slug: konveyor-ecosystem/coolstore
+    konveyor.io/source-technology: java-ee-7
+    konveyor.io/target-technology: quarkus-3.8
+    konveyor.io/migration-status: in-progress
+    konveyor.io/complexity: high
+spec:
+  type: service
+  lifecycle: production
+  owner: guests

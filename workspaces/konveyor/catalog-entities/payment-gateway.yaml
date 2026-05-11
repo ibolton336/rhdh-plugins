@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: payment-gateway
+  description: "Spring Boot payment service — complex transactions"
+  tags:
+    - migration-candidate
+    - java
+    - spring-boot
+  annotations:
+    github.com/project-slug: konveyor-ecosystem/payment-gateway
+    konveyor.io/source-technology: spring-boot-2.5
+    konveyor.io/target-technology: quarkus-3.8
+    konveyor.io/migration-status: failed
+    konveyor.io/complexity: high
+spec:
+  type: service
+  lifecycle: production
+  owner: guests

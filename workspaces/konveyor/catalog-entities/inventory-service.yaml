@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: inventory-service
+  description: "Spring Boot inventory microservice — JPA + REST"
+  tags:
+    - migration-candidate
+    - java
+    - spring-boot
+  annotations:
+    github.com/project-slug: konveyor-ecosystem/inventory-service
+    konveyor.io/source-technology: spring-boot-2.7
+    konveyor.io/target-technology: quarkus-3.8
+    konveyor.io/migration-status: pending
+    konveyor.io/complexity: medium
+spec:
+  type: service
+  lifecycle: production
+  owner: guests
