@@ -111,32 +111,17 @@ export async function createRouter(
 
   router.get('/migrations', async (_req, res) => {
     try {
-      const migrations = await databaseService.listMigrations();
-      // Update status from K8s for running migrations
-      const updated = await Promise.all(
-        migrations.map(async m => {
-          if (m.status === 'pending' || m.status === 'running') {
-            try {
-              const status = await kubernetesService.getPipelineRunStatus(
-                m.pipelineRunName,
-                m.namespace,
-              );
-              if (status.status !== m.status) {
-                await databaseService.updateMigrationStatus(
-                  m.id,
-                  status.status,
-                  status.completionTime,
-                );
-                return { ...m, status: status.status };
-              }
-            } catch {
-              // Keep existing status on error
-            }
-          }
-          return m;
-        }),
-      );
-      res.json(updated);
+      // Get migrations from K8s PipelineRuns directly
+      const k8sMigrations = await kubernetesService.listPipelineRuns();
+
+      // Also get DB migrations and merge
+      const dbMigrations = await databaseService.listMigrations();
+
+      // Merge: K8s is source of truth, add any DB-only entries
+      const k8sNames = new Set(k8sMigrations.map((m: any) => m.pipelineRunName));
+      const dbOnly = dbMigrations.filter(m => !k8sNames.has(m.pipelineRunName));
+
+      res.json([...k8sMigrations, ...dbOnly]);
     } catch (err) {
       logger.error(`Failed to list migrations: ${err}`);
       res.status(500).json({ error: 'Failed to list migrations' });

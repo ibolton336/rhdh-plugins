@@ -280,4 +280,48 @@ export class KubernetesService {
       return `[Error fetching logs: ${err}]`;
     }
   }
+
+  async listPipelineRuns(namespace?: string): Promise<any[]> {
+    const ns = namespace || KubernetesService.NAMESPACE;
+
+    if (!this.inCluster || !this.client) {
+      return [];
+    }
+
+    try {
+      const response = await this.client.listNamespacedCustomObject({
+        group: 'tekton.dev',
+        version: 'v1',
+        namespace: ns,
+        plural: 'pipelineruns',
+        labelSelector: 'tekton.dev/pipeline=full-migration-pipeline',
+      });
+
+      const items = (response as any)?.items || [];
+      return items.map((item: any) => {
+        const conditions = item.status?.conditions || [];
+        const succeeded = conditions.find((c: any) => c.type === 'Succeeded');
+        let status: MigrationStatus = 'pending';
+        if (succeeded) {
+          if (succeeded.status === 'True') status = 'succeeded';
+          else if (succeeded.status === 'False') status = 'failed';
+          else status = 'running';
+        } else if (item.status?.startTime) {
+          status = 'running';
+        }
+
+        return {
+          id: item.metadata.name,
+          pipelineRunName: item.metadata.name,
+          applicationName: item.metadata.labels?.['migration-intelligence/app'] || 'unknown',
+          status,
+          startedAt: item.status?.startTime || item.metadata.creationTimestamp,
+          completedAt: item.status?.completionTime || undefined,
+        };
+      });
+    } catch (err) {
+      this.logger.error(`Failed to list PipelineRuns: ${err}`);
+      return [];
+    }
+  }
 }
