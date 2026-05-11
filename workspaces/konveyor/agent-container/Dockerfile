@@ -1,25 +1,29 @@
-FROM node:22-slim
+FROM debian:bookworm-slim
 
-# Install git + python3 (needed for goose and repo operations)
+# Install system deps
 RUN apt-get update && \
-    apt-get install -y git curl python3 python3-pip python3-venv && \
+    apt-get install -y --no-install-recommends git curl ca-certificates bzip2 libgomp1 && \
     rm -rf /var/lib/apt/lists/*
 
-# Install goose (AI coding agent)
-RUN npm install -g @anthropic-ai/claude-code || true
-RUN pip3 install --break-system-packages goose-ai 2>/dev/null || true
+# Install Goose (Block's AI agent - Rust binary)
+ARG GOOSE_VERSION=v1.33.1
+RUN curl -fsSL "https://github.com/aaif-goose/goose/releases/download/${GOOSE_VERSION}/goose-x86_64-unknown-linux-gnu.tar.bz2" | \
+    tar -xj -C /usr/local/bin && \
+    chmod +x /usr/local/bin/goose && \
+    goose --version
 
-# Create workspace
+# Create directories
 WORKDIR /workspace
+RUN mkdir -p /skills
 
 # Copy migration skills
-COPY skills/ /opt/migration-skills/
+COPY skills/ /skills/
 
 # Copy entrypoint
 COPY entrypoint.sh /opt/entrypoint.sh
 RUN chmod +x /opt/entrypoint.sh
 
-ENV SKILL_DIR=/opt/migration-skills
+ENV SKILL_DIR=/skills
 ENV AGENT_TYPE=goose
 
 ENTRYPOINT ["/opt/entrypoint.sh"]
