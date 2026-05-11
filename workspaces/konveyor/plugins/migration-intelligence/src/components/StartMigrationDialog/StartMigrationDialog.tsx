@@ -169,7 +169,7 @@ export const StartMigrationDialog = ({
               >
                 {activePipelines.map(p => (
                   <MenuItem key={p.id} value={p.id}>
-                    {p.name} — {p.steps.length} steps
+                    {p.name} — {(p.steps || []).length} steps
                   </MenuItem>
                 ))}
               </Select>
@@ -183,7 +183,7 @@ export const StartMigrationDialog = ({
                 <Typography variant="caption" color="textSecondary">
                   Pipeline steps:
                 </Typography>
-                {pipeline.steps.map(step => (
+                {(pipeline.steps || []).map(step => (
                   <Paper
                     key={step.order}
                     variant="outlined"
@@ -230,7 +230,7 @@ export const StartMigrationDialog = ({
                 </Typography>
                 <Typography variant="body2">
                   <strong>Steps:</strong>{' '}
-                  {pipeline?.steps.map(s => s.agentName).join(' → ')}
+                  {pipeline?.steps?.map(s => s.agentName).join(' → ')}
                 </Typography>
               </Box>
               <Box mt={2}>
@@ -265,7 +265,7 @@ export const StartMigrationDialog = ({
           <Alert severity="success">
             PipelineRun created! Migration of <strong>{app?.name}</strong> is
             now running. Pipeline: {pipeline?.name} (
-            {pipeline?.steps.map(s => s.agentName).join(' → ')}). You'll
+            {pipeline?.steps?.map(s => s.agentName).join(' → ')}). You'll
             receive a PR link when complete.
           </Alert>
         ) : (
@@ -274,7 +274,7 @@ export const StartMigrationDialog = ({
               Ready to start the migration pipeline?
             </Typography>
             <Alert severity="warning">
-              This will spin up {pipeline?.steps.length} agent container(s) on
+              This will spin up {pipeline?.steps?.length || 0} agent container(s) on
               the cluster. Each agent will process the source code sequentially.
             </Alert>
           </Box>
