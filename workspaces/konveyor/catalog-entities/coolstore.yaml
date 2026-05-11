@@ -10,7 +10,7 @@ metadata:
     github.com/project-slug: konveyor-ecosystem/coolstore
     konveyor.io/source-technology: java-ee-7
     konveyor.io/target-technology: quarkus-3.8
-    konveyor.io/migration-status: in-progress
+    konveyor.io/migration-status: pending
     konveyor.io/complexity: high
 spec:
   type: service

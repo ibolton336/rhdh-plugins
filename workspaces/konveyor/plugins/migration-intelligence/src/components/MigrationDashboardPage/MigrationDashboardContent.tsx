@@ -306,7 +306,7 @@ export const MigrationDashboardContent = () => {
         <StartMigrationDialog
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}
-          applications={appData.filter(a => a.status === 'pending')}
+          applications={appData}
         />
 
     </Content>
