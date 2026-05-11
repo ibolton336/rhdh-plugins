@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApi } from '@backstage/core-plugin-api';
 import { catalogApiRef } from '@backstage/plugin-catalog-react';
 import { ApplicationMigration, MigrationStatus } from '../components/MigrationDashboardPage/mockData';
@@ -9,10 +9,11 @@ import { mockApplications } from '../components/MigrationDashboardPage/mockData'
  * Falls back to mock data if catalog API is unavailable.
  */
 export function useCatalogApplications() {
-  const [applications, setApplications] = useState<ApplicationMigration[]>([]);
+  const [applications, setApplications] = useState<ApplicationMigration[]>(mockApplications);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [fromCatalog, setFromCatalog] = useState(false);
+  const fetchedRef = useRef(false);
 
   let catalogApi: any;
   try {
@@ -22,6 +23,9 @@ export function useCatalogApplications() {
   }
 
   useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
     if (!catalogApi) {
       setApplications(mockApplications);
       setLoading(false);
@@ -36,7 +40,7 @@ export function useCatalogApplications() {
         },
       })
       .then((response: any) => {
-        const entities = response.items || [];
+        const entities = (response && response.items) || [];
         if (entities.length === 0) {
           // No catalog entities found, use mocks
           setApplications(mockApplications);

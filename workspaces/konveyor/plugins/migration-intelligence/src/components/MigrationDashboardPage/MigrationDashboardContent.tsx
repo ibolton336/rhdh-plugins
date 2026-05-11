@@ -3,13 +3,12 @@ import {
   Content,
   ContentHeader,
   SupportButton,
-  Table,
-  TableColumn,
   StatusOK,
   StatusRunning,
   StatusPending,
   StatusError,
   InfoCard,
+  Progress,
 } from '@backstage/core-components';
 import {
   Grid,
@@ -21,6 +20,13 @@ import {
   Card,
   CardContent,
   CardActions,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
@@ -164,104 +170,12 @@ function MigratorCard({ migrator }: { migrator: Migrator }) {
 }
 
 export const MigrationDashboardContent = () => {
-  const { applications: catalogApps } = useCatalogApplications();
-  const appData = catalogApps;
+  const { applications: catalogApps, loading } = useCatalogApplications();
+  const appData = catalogApps || [];
   const classes = useStyles();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const columns: TableColumn<ApplicationMigration>[] = [
-    {
-      title: 'Application',
-      field: 'name',
-      render: row => (
-        <Box>
-          <Typography variant="body1" style={{ fontWeight: 600 }}>
-            {row.name}
-          </Typography>
-          <Typography variant="caption" color="textSecondary">
-            {row.description}
-          </Typography>
-        </Box>
-      ),
-    },
-    {
-      title: 'Source',
-      field: 'sourceTechnology',
-      render: row => (
-        <Chip label={row.sourceTechnology} size="small" variant="outlined" />
-      ),
-    },
-    {
-      title: 'Target',
-      field: 'targetTechnology',
-      render: row => (
-        <Chip label={row.targetTechnology} size="small" color="primary" />
-      ),
-    },
-    {
-      title: 'Complexity',
-      field: 'complexity',
-      render: row => (
-        <Chip
-          label={row.complexity}
-          size="small"
-          className={
-            row.complexity === 'high'
-              ? classes.complexityHigh
-              : row.complexity === 'medium'
-                ? classes.complexityMedium
-                : classes.complexityLow
-          }
-        />
-      ),
-    },
-    {
-      title: 'Status',
-      field: 'status',
-      render: row => (
-        <Box>
-          <StatusIndicator status={row.status} />
-          {row.progress !== undefined && row.status === 'in-progress' && (
-            <Box mt={0.5}>
-              <LinearProgress
-                variant="determinate"
-                value={row.progress}
-                className={classes.progressBar}
-              />
-              <Typography variant="caption">{row.progress}%</Typography>
-            </Box>
-          )}
-        </Box>
-      ),
-    },
-    {
-      title: 'Issues',
-      render: row =>
-        row.issuesFound ? (
-          <Typography variant="body2">
-            {row.issuesResolved}/{row.issuesFound} resolved
-          </Typography>
-        ) : (
-          <Typography variant="body2" color="textSecondary">
-            —
-          </Typography>
-        ),
-    },
-    {
-      title: 'Updated',
-      field: 'lastUpdated',
-      render: row => (
-        <Typography variant="body2">
-          {new Date(row.lastUpdated).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </Typography>
-      ),
-    },
-  ];
+  if (loading) return <Progress />;
 
   return (
     <Content>
@@ -288,18 +202,100 @@ export const MigrationDashboardContent = () => {
           title="Applications"
           subheader="Track migration progress across your portfolio"
         >
-          <Table
-            columns={columns}
-            data={appData}
-            title=""
-            options={{ search: true, paging: false, padding: 'dense' }}
-          />
+          {appData.length === 0 ? (
+            <Typography variant="body1" color="textSecondary">
+              No applications found. Tag catalog components with &quot;migration-candidate&quot; to see them here.
+            </Typography>
+          ) : (
+            <TableContainer component={Paper} variant="outlined">
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Application</TableCell>
+                    <TableCell>Source</TableCell>
+                    <TableCell>Target</TableCell>
+                    <TableCell>Complexity</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Issues</TableCell>
+                    <TableCell>Updated</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {appData.map((row: ApplicationMigration) => (
+                    <TableRow key={row.id}>
+                      <TableCell>
+                        <Typography variant="body2" style={{ fontWeight: 600 }}>
+                          {row.name}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary">
+                          {row.description}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip label={row.sourceTechnology} size="small" variant="outlined" />
+                      </TableCell>
+                      <TableCell>
+                        <Chip label={row.targetTechnology} size="small" color="primary" />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={row.complexity}
+                          size="small"
+                          className={
+                            row.complexity === 'high'
+                              ? classes.complexityHigh
+                              : row.complexity === 'medium'
+                                ? classes.complexityMedium
+                                : classes.complexityLow
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <StatusIndicator status={row.status} />
+                        {row.progress !== undefined && row.status === 'in-progress' && (
+                          <Box mt={0.5}>
+                            <LinearProgress
+                              variant="determinate"
+                              value={row.progress}
+                              className={classes.progressBar}
+                            />
+                            <Typography variant="caption">{row.progress}%</Typography>
+                          </Box>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {row.issuesFound ? (
+                          <Typography variant="body2">
+                            {row.issuesResolved}/{row.issuesFound} resolved
+                          </Typography>
+                        ) : (
+                          <Typography variant="body2" color="textSecondary">
+                            —
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {new Date(row.lastUpdated).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
         </InfoCard>
 
         <Box mt={3}>
           <ContentHeader title="Available Migrators" />
           <Grid container spacing={3}>
-            {mockMigrators.map(migrator => (
+            {(mockMigrators || []).map(migrator => (
               <Grid item xs={12} md={4} key={migrator.id}>
                 <MigratorCard migrator={migrator} />
               </Grid>
