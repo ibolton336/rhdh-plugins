@@ -16,15 +16,14 @@ import {
   Step,
   StepLabel,
   Paper,
+  CircularProgress,
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import { Alert } from '@material-ui/lab';
+import { useApi } from '@backstage/core-plugin-api';
 
 import { ApplicationMigration } from '../MigrationDashboardPage/mockData';
-import {
-  mockPipelineDefinitions,
-} from '../PipelineDefinitionsPage/mockData';
-import { mockAgentDefinitions } from '../AgentDefinitionsPage/mockData';
+import { migrationIntelligenceApiRef } from '../../api';
 
 const useStyles = makeStyles(theme => ({
   formControl: { margin: theme.spacing(2, 0), minWidth: '100%' },
@@ -34,12 +33,6 @@ const useStyles = makeStyles(theme => ({
     backgroundColor: theme.palette.background.default,
   },
   chip: { margin: theme.spacing(0.5) },
-  pipelineStep: {
-    padding: theme.spacing(1),
-    margin: theme.spacing(0.5, 0),
-    borderLeft: `3px solid ${theme.palette.primary.main}`,
-    paddingLeft: theme.spacing(2),
-  },
 }));
 
 interface StartMigrationDialogProps {
@@ -48,11 +41,15 @@ interface StartMigrationDialogProps {
   applications: ApplicationMigration[];
 }
 
+const availableSkills = [
+  { id: 'java-ee-to-quarkus', name: 'Java EE → Quarkus', description: 'Migrates Java EE apps to Quarkus using AI-assisted transformation' },
+  { id: 'spring-boot-to-quarkus', name: 'Spring Boot → Quarkus', description: 'Converts Spring Boot services to Quarkus with compatibility layer' },
+];
+
 const steps = [
   'Select Application',
-  'Choose Pipeline',
-  'Configure & Review',
-  'Start',
+  'Choose Skill',
+  'Review & Start',
 ];
 
 export const StartMigrationDialog = ({
@@ -63,24 +60,53 @@ export const StartMigrationDialog = ({
   const classes = useStyles();
   const [activeStep, setActiveStep] = useState(0);
   const [selectedApp, setSelectedApp] = useState<string>('');
-  const [selectedPipeline, setSelectedPipeline] = useState<string>('');
+  const [selectedSkill, setSelectedSkill] = useState<string>('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<any>(null);
+
+  let api: any;
+  try {
+    api = useApi(migrationIntelligenceApiRef);
+  } catch {
+    api = null;
+  }
 
   const app = applications.find(a => a.id === selectedApp);
-  const pipeline = mockPipelineDefinitions.find(
-    p => p.id === selectedPipeline,
-  );
-  const activePipelines = mockPipelineDefinitions.filter(
-    p => p.status === 'active',
-  );
-  const activeAgents = mockAgentDefinitions.filter(
-    a => a.status === 'active',
-  );
+  const skill = availableSkills.find(s => s.id === selectedSkill);
+
+  const handleSubmit = async () => {
+    if (!app || !selectedSkill) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      if (!api) {
+        throw new Error('Migration Intelligence API not available');
+      }
+
+      // Call the backend to create a real PipelineRun
+      const response = await api.startMigration({
+        applicationName: app.name,
+        sourceRepo: app.sourceRepository || `https://github.com/konveyor-ecosystem/${app.name}`,
+        skill: selectedSkill,
+      });
+
+      setResult(response);
+      setSubmitted(true);
+    } catch (err: any) {
+      console.error('Migration failed:', err);
+      setError(err.message || 'Failed to start migration');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleNext = () => {
     if (activeStep === steps.length - 1) {
-      setSubmitted(true);
-      setTimeout(() => handleClose(), 3000);
+      handleSubmit();
     } else {
       setActiveStep(prev => prev + 1);
     }
@@ -91,14 +117,17 @@ export const StartMigrationDialog = ({
   const handleClose = () => {
     setActiveStep(0);
     setSelectedApp('');
-    setSelectedPipeline('');
+    setSelectedSkill('');
     setSubmitted(false);
+    setSubmitting(false);
+    setError(null);
+    setResult(null);
     onClose();
   };
 
   const canProceed = () => {
     if (activeStep === 0) return !!selectedApp;
-    if (activeStep === 1) return !!selectedPipeline;
+    if (activeStep === 1) return !!selectedSkill;
     return true;
   };
 
@@ -117,7 +146,7 @@ export const StartMigrationDialog = ({
                 onChange={e => setSelectedApp(e.target.value as string)}
                 label="Application"
               >
-                {applications.map(a => (
+                {(applications || []).map(a => (
                   <MenuItem key={a.id} value={a.id}>
                     {a.name} — {a.sourceTechnology} → {a.targetTechnology}
                   </MenuItem>
@@ -131,24 +160,15 @@ export const StartMigrationDialog = ({
                   {app.description}
                 </Typography>
                 <Box mt={1}>
-                  <Chip
-                    label={app.sourceTechnology}
-                    size="small"
-                    className={classes.chip}
-                  />
-                  <Chip
-                    label="→"
-                    size="small"
-                    variant="outlined"
-                    className={classes.chip}
-                  />
-                  <Chip
-                    label={app.targetTechnology}
-                    size="small"
-                    color="primary"
-                    className={classes.chip}
-                  />
+                  <Chip label={app.sourceTechnology} size="small" className={classes.chip} />
+                  <Chip label="→" size="small" variant="outlined" className={classes.chip} />
+                  <Chip label={app.targetTechnology} size="small" color="primary" className={classes.chip} />
                 </Box>
+                {app.sourceRepository && (
+                  <Typography variant="caption" color="textSecondary" style={{ marginTop: 8, display: 'block' }}>
+                    Repo: {app.sourceRepository}
+                  </Typography>
+                )}
               </Paper>
             )}
           </Box>
@@ -158,125 +178,74 @@ export const StartMigrationDialog = ({
         return (
           <Box>
             <Typography variant="body1" gutterBottom>
-              Choose a migration pipeline:
+              Choose a migration skill:
             </Typography>
             <FormControl variant="outlined" className={classes.formControl}>
-              <InputLabel>Pipeline</InputLabel>
+              <InputLabel>Skill</InputLabel>
               <Select
-                value={selectedPipeline}
-                onChange={e => setSelectedPipeline(e.target.value as string)}
-                label="Pipeline"
+                value={selectedSkill}
+                onChange={e => setSelectedSkill(e.target.value as string)}
+                label="Skill"
               >
-                {activePipelines.map(p => (
-                  <MenuItem key={p.id} value={p.id}>
-                    {p.name} — {(p.steps || []).length} steps
+                {availableSkills.map(s => (
+                  <MenuItem key={s.id} value={s.id}>
+                    {s.name}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
-            {pipeline && (
+            {skill && (
               <Paper variant="outlined" className={classes.summary}>
-                <Typography variant="subtitle2">{pipeline.name}</Typography>
-                <Typography variant="body2" color="textSecondary" gutterBottom>
-                  {pipeline.description}
+                <Typography variant="subtitle2">{skill.name}</Typography>
+                <Typography variant="body2" color="textSecondary">
+                  {skill.description}
                 </Typography>
-                <Typography variant="caption" color="textSecondary">
-                  Pipeline steps:
-                </Typography>
-                {(pipeline.steps || []).map(step => (
-                  <Paper
-                    key={step.order}
-                    variant="outlined"
-                    className={classes.pipelineStep}
-                  >
-                    <Typography variant="body2">
-                      <strong>{step.order}.</strong> {step.agentName}
-                    </Typography>
-                    <Typography variant="caption" color="textSecondary">
-                      {step.description}
-                    </Typography>
-                  </Paper>
-                ))}
               </Paper>
             )}
           </Box>
         );
 
       case 2:
+        if (submitted && result) {
+          return (
+            <Alert severity="success">
+              <strong>PipelineRun created!</strong><br />
+              Migration of <strong>{app?.name}</strong> is now running.<br />
+              PipelineRun: <code>{result.pipelineRunName || result.migrationId}</code><br />
+              Skill: {selectedSkill}
+            </Alert>
+          );
+        }
+
+        if (error) {
+          return (
+            <Alert severity="error">
+              <strong>Failed to start migration:</strong><br />
+              {error}
+            </Alert>
+          );
+        }
+
         return (
           <Box>
             <Typography variant="body1" gutterBottom>
-              Review configuration:
+              Review and start the migration:
             </Typography>
             <Paper variant="outlined" className={classes.summary}>
-              <Typography variant="subtitle2" gutterBottom>
-                Migration Summary
-              </Typography>
-              <Typography variant="body2">
-                <strong>Application:</strong> {app?.name}
-              </Typography>
-              <Typography variant="body2">
-                <strong>Source:</strong> {app?.sourceTechnology}
-              </Typography>
-              <Typography variant="body2">
-                <strong>Target:</strong> {app?.targetTechnology}
-              </Typography>
-              <Typography variant="body2">
-                <strong>Repository:</strong> {app?.sourceRepository}
-              </Typography>
-              <Box mt={2}>
-                <Typography variant="body2">
-                  <strong>Pipeline:</strong> {pipeline?.name}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Steps:</strong>{' '}
-                  {pipeline?.steps?.map(s => s.agentName).join(' → ')}
-                </Typography>
-              </Box>
-              <Box mt={2}>
-                <Typography variant="caption" color="textSecondary">
-                  Agents that will be used:
-                </Typography>
-                <Box mt={0.5}>
-                  {activeAgents.slice(0, 2).map(agent => (
-                    <Chip
-                      key={agent.id}
-                      label={`${agent.name} (${agent.llmProvider})`}
-                      size="small"
-                      className={classes.chip}
-                    />
-                  ))}
-                </Box>
-              </Box>
+              <Typography variant="subtitle2" gutterBottom>Migration Summary</Typography>
+              <Typography variant="body2"><strong>Application:</strong> {app?.name}</Typography>
+              <Typography variant="body2"><strong>Source:</strong> {app?.sourceTechnology}</Typography>
+              <Typography variant="body2"><strong>Target:</strong> {app?.targetTechnology}</Typography>
+              <Typography variant="body2"><strong>Repository:</strong> {app?.sourceRepository || `https://github.com/konveyor-ecosystem/${app?.name}`}</Typography>
+              <Typography variant="body2"><strong>Skill:</strong> {skill?.name}</Typography>
               <Box mt={2}>
                 <Alert severity="info">
-                  This will create a Tekton PipelineRun on the cluster. Each
-                  step runs as a container with access to the configured
-                  migration skill. The final step opens a PR with the migrated
-                  code.
+                  This will create a Tekton PipelineRun on the cluster. The migration agent
+                  (goose + {selectedSkill} skill) will clone the repo, analyze it, and apply
+                  code transformations using Claude via AWS Bedrock.
                 </Alert>
               </Box>
             </Paper>
-          </Box>
-        );
-
-      case 3:
-        return submitted ? (
-          <Alert severity="success">
-            PipelineRun created! Migration of <strong>{app?.name}</strong> is
-            now running. Pipeline: {pipeline?.name} (
-            {pipeline?.steps?.map(s => s.agentName).join(' → ')}). You'll
-            receive a PR link when complete.
-          </Alert>
-        ) : (
-          <Box>
-            <Typography variant="body1" gutterBottom>
-              Ready to start the migration pipeline?
-            </Typography>
-            <Alert severity="warning">
-              This will spin up {pipeline?.steps?.length || 0} agent container(s) on
-              the cluster. Each agent will process the source code sequentially.
-            </Alert>
           </Box>
         );
 
@@ -299,8 +268,10 @@ export const StartMigrationDialog = ({
         <Box mt={2}>{renderStep()}</Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        {activeStep > 0 && !submitted && (
+        <Button onClick={handleClose}>
+          {submitted ? 'Close' : 'Cancel'}
+        </Button>
+        {activeStep > 0 && !submitted && !submitting && (
           <Button onClick={handleBack}>Back</Button>
         )}
         {!submitted && (
@@ -308,9 +279,10 @@ export const StartMigrationDialog = ({
             variant="contained"
             color="primary"
             onClick={handleNext}
-            disabled={!canProceed()}
+            disabled={!canProceed() || submitting}
+            startIcon={submitting ? <CircularProgress size={16} /> : undefined}
           >
-            {activeStep === steps.length - 1 ? 'Create PipelineRun' : 'Next'}
+            {submitting ? 'Creating...' : activeStep === steps.length - 1 ? 'Create PipelineRun' : 'Next'}
           </Button>
         )}
       </DialogActions>

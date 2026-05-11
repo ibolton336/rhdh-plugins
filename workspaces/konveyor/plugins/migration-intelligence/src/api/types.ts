@@ -9,8 +9,10 @@ export interface MigrationIntelligenceApi {
   getMigrations(): Promise<Migration[]>;
   getMigration(id: string): Promise<Migration>;
   startMigration(params: {
-    applicationId: string;
-    pipelineId: string;
+    applicationName: string;
+    sourceRepo: string;
+    skill: string;
+    pipelineId?: string;
   }): Promise<Migration>;
 }
 
