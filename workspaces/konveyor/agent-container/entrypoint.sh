@@ -48,10 +48,11 @@ if ! command -v goose &> /dev/null; then
 fi
 
 # Run goose
+MAX_TURNS="${MAX_TURNS:-15}"
 if [ -n "$INSTRUCTIONS" ]; then
-  goose run --no-session --quiet $INSTRUCTIONS
+  goose run --no-session --quiet --max-turns "$MAX_TURNS" $INSTRUCTIONS
 else
-  goose run --no-session --quiet --text "Migrate the code in this directory. Apply all necessary transformations for modernization."
+  goose run --no-session --quiet --max-turns "$MAX_TURNS" --text "Migrate the code in this directory. Apply all necessary transformations for modernization."
 fi
 
 echo ""

@@ -60,9 +60,23 @@ export class MigrationIntelligenceClient implements MigrationIntelligenceApi {
 
   async getMigration(id: string): Promise<Migration> {
     const baseUrl = await this.getBaseUrl();
-    const response = await this.fetchApi.fetch(`${baseUrl}/migrations/${id}`);
-    if (!response.ok) throw new Error(`Failed to fetch migration: ${response.statusText}`);
-    return response.json();
+    // Try logs endpoint directly (K8s-based, doesn't need DB)
+    const logsResponse = await this.fetchApi.fetch(`${baseUrl}/migrations/logs/${id}`);
+    const statusResponse = await this.fetchApi.fetch(`${baseUrl}/migrations/status/${id}`);
+    
+    const logs = logsResponse.ok ? await logsResponse.json() : {};
+    const status = statusResponse.ok ? await statusResponse.json() : {};
+    
+    return {
+      id,
+      pipelineRunName: id,
+      applicationName: status.name || id,
+      status: status.status || 'unknown',
+      startedAt: status.startTime,
+      completedAt: status.completionTime,
+      logs: logs.logs || '',
+      taskRuns: status.taskRuns,
+    } as any;
   }
 
   async startMigration(params: { applicationName: string; sourceRepo: string; skill: string; pipelineId?: string }): Promise<Migration> {
