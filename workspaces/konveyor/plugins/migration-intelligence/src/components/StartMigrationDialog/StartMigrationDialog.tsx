@@ -20,7 +20,7 @@ import {
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import { Alert } from '@material-ui/lab';
-import { useApi } from '@backstage/core-plugin-api';
+import { useApi, githubAuthApiRef } from '@backstage/core-plugin-api';
 
 import { ApplicationMigration } from '../MigrationDashboardPage/mockData';
 import { migrationIntelligenceApiRef } from '../../api';
@@ -73,6 +73,13 @@ export const StartMigrationDialog = ({
     api = null;
   }
 
+  let githubAuth: any;
+  try {
+    githubAuth = useApi(githubAuthApiRef);
+  } catch {
+    githubAuth = null;
+  }
+
   const app = applications.find(a => a.id === selectedApp);
   const skill = availableSkills.find(s => s.id === selectedSkill);
 
@@ -87,11 +94,22 @@ export const StartMigrationDialog = ({
         throw new Error('Migration Intelligence API not available');
       }
 
+      // Get GitHub token from the user's auth session
+      let githubToken: string | undefined;
+      if (githubAuth) {
+        try {
+          githubToken = await githubAuth.getAccessToken(['repo']);
+        } catch (tokenErr: any) {
+          console.warn('Could not obtain GitHub token:', tokenErr);
+        }
+      }
+
       // Call the backend to create a real PipelineRun
       const response = await api.startMigration({
         applicationName: app.name,
         sourceRepo: app.sourceRepository || `https://github.com/konveyor-ecosystem/${app.name}`,
         skill: selectedSkill,
+        githubToken,
       });
 
       setResult(response);

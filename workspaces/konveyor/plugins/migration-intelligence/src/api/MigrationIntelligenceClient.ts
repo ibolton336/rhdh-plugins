@@ -79,7 +79,7 @@ export class MigrationIntelligenceClient implements MigrationIntelligenceApi {
     } as any;
   }
 
-  async startMigration(params: { applicationName: string; sourceRepo: string; skill: string; pipelineId?: string }): Promise<Migration> {
+  async startMigration(params: { applicationName: string; sourceRepo: string; skill: string; pipelineId?: string; githubToken?: string }): Promise<Migration> {
     const baseUrl = await this.getBaseUrl();
     const response = await this.fetchApi.fetch(`${baseUrl}/migrations`, {
       method: 'POST',

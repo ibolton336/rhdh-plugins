@@ -13,6 +13,7 @@ export interface MigrationIntelligenceApi {
     sourceRepo: string;
     skill: string;
     pipelineId?: string;
+    githubToken?: string;
   }): Promise<Migration>;
 }
 

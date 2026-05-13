@@ -135,6 +135,7 @@ export async function createRouter(
         sourceRepo?: string;
         skill?: string;
         pipelineId?: string;
+        githubToken?: string;
         // Legacy fields
         name?: string;
         pipelineDefinitionId?: string;
@@ -148,6 +149,7 @@ export async function createRouter(
           applicationName: body.applicationName,
           sourceRepo: body.sourceRepo,
           skill: body.skill,
+          githubToken: body.githubToken,
         });
 
         // Also persist to DB if pipelineId is provided

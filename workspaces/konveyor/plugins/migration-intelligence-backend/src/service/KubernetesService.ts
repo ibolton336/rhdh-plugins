@@ -39,6 +39,7 @@ export interface StartMigrationParams {
   skill: string;
   sourceBranch?: string;
   llmProvider?: string;
+  githubToken?: string;
 }
 
 export class KubernetesService {
@@ -109,6 +110,7 @@ export class KubernetesService {
           { name: 'target-branch', value: targetBranch },
           { name: 'skill', value: params.skill },
           { name: 'llm-provider', value: params.llmProvider ?? 'openai' },
+          { name: 'github-token', value: params.githubToken || '' },
         ],
         workspaces: [
           {
